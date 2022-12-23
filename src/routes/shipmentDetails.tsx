@@ -8,6 +8,7 @@ import {
   HStack,
   Heading,
   Spacer,
+  Stack,
   Text,
   VStack,
 } from "@chakra-ui/layout";
@@ -23,6 +24,8 @@ import {
   ModalHeader,
   ModalOverlay,
   Progress,
+  Skeleton,
+  SkeletonCircle,
   useColorMode,
   useDisclosure,
   useToast,
@@ -45,6 +48,7 @@ import {
   FaBalanceScale,
   FaBox,
   FaClipboardList,
+  FaClock,
   FaTrash,
   FaTruck,
   FaTruckLoading,
@@ -56,9 +60,11 @@ import { BsCheck } from "react-icons/bs";
 import { carriers } from "./shipmentAdd";
 import { IRes } from "../main";
 import { IconType } from "react-icons/lib";
+import { useFocusRefOnModalClose } from "../App";
 
 const DELIVERED = 99;
 const SAMEDAY_LOADED_LOCKER = 78;
+const SAMEDAY_BUSY_LOCKER = 79;
 const ON_DELIVERY = 5;
 const IN_WAREHOUSE = 4;
 const IN_TRANSIT = 3;
@@ -75,6 +81,7 @@ export const status_icons: { [id: number]: IconType } = {
   [ORDER_CREATED]: FaClipboardList,
   [CARGUS_WEIGHTING]: FaBalanceScale,
   [SAMEDAY_LOADED_LOCKER]: TbTruckLoading,
+  [SAMEDAY_BUSY_LOCKER]: FaClock,
 };
 
 export async function getShipment(trackingid: string) {
@@ -146,6 +153,7 @@ function ShipmentDetails() {
   let submit = useSubmit();
   let focusRef = useRef(null);
   let toast = useToast();
+  let focusRefClose = useFocusRefOnModalClose();
 
   useEffect(() => {
     submit(null, { method: "post", action: `/shipment/${trackingid}` });
@@ -159,6 +167,7 @@ function ShipmentDetails() {
         isCentered={true}
         scrollBehavior="inside"
         initialFocusRef={focusRef}
+        finalFocusRef={focusRefClose}
       >
         <ModalOverlay />
         <ModalContent minH="300px">
@@ -193,8 +202,8 @@ function ShipmentDetails() {
           {/* <ModalCloseButton /> */}
           <ModalBody>
             {shipment ? (
-              <VStack align="start" w="100%" ref={focusRef}>
-                <Box w="100%">
+              <VStack align="start" w="100%" >
+                <Box w="100%" ref={focusRef}>
                   {shipment.history?.map((el, i) => (
                     <StepDetail
                       status={el.status}
@@ -204,9 +213,23 @@ function ShipmentDetails() {
                       statusDate={el.statusDate}
                     />
                   )) || null}
-                  {shipment.history?.length === 0 && (
+                  {/* {shipment.history?.length === 0 && (
                     <Progress size="xs" isIndeterminate />
-                  )}
+                  )} */}
+                  {shipment.history?.length === 0 && <Stack>
+                    <HStack>
+                      <SkeletonCircle size="10" />
+                      <Skeleton height="20px" width="100%" />
+                    </HStack>
+                    <HStack>
+                      <SkeletonCircle size="10" />
+                      <Skeleton height="20px" width="100%" />
+                    </HStack>
+                    <HStack>
+                      <SkeletonCircle size="10" />
+                      <Skeleton height="20px" width="100%" />
+                    </HStack>
+                  </Stack>}
                   {/* <StepDetail status={"Delivery"} location={"Here"} />
                   <StepDetail status={"Delivery"} location={"Here"} />
                   <StepDetail status={"Delivery"} location={"Here"} />

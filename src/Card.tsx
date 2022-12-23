@@ -1,18 +1,28 @@
 import { Button } from "@chakra-ui/button";
 import { Icon } from "@chakra-ui/icon";
-import { Box, Flex, Heading, Spacer, Text } from "@chakra-ui/layout";
+import {
+  Box,
+  Flex,
+  Heading,
+  LinkBox,
+  LinkOverlay,
+  Spacer,
+  Text,
+} from "@chakra-ui/layout";
 import { useColorMode } from "@chakra-ui/react";
 import { useCallback, useEffect } from "react";
 import { MdCabin } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { status_icons } from "./routes/shipmentDetails";
+import { FaArrowRight } from "react-icons/fa";
 
 function Card({ id, status, statusId, ...rest }: any) {
   const navigate = useNavigate();
-  const { colorMode, toggleColorMode } = useColorMode()
+  const { colorMode, toggleColorMode } = useColorMode();
   return (
     // <Button w="100%" h="100%">
-    <Link to={`shipment/${id}`} style={{height: "fit-content", WebkitTapHighlightColor: 'transparent'}}>
+    // <Link to={`shipment/${id}`} style={{height: "fit-content", WebkitTapHighlightColor: 'transparent'}}>
+    <LinkBox>
       <Flex
         _hover={{ bg: colorMode === "light" ? "#ebedf0" : "#545c68" }}
         transition="all 0.2s cubic-bezier(.08,.52,.52,1)"
@@ -26,12 +36,16 @@ function Card({ id, status, statusId, ...rest }: any) {
         shadow="md"
         borderRadius="5px"
         // borderWidth="1px"
+        boxSizing="border-box"
         flexDirection="row"
         align={"center"}
+        w={["100%", "max-content"]}
+        maxW={["350px", "300px"]}
+        mb={["0", "5"]}
         {...rest}
       >
         <Icon as={status_icons[statusId]} w={8} h={8} mr={4} />
-        <Box>
+        <Box flex="1" noOfLines={1}>
           <Text as="b" textAlign="start" noOfLines={1}>
             {id}
           </Text>
@@ -39,8 +53,14 @@ function Card({ id, status, statusId, ...rest }: any) {
             {status}
           </Text>
         </Box>
+        <LinkOverlay as={Link} to={`shipment/${id}`} style={{WebkitTapHighlightColor: 'transparent'}}>
+          <Flex>
+            <Icon as={FaArrowRight} w={8} h={8} ml={4} />
+          </Flex>
+        </LinkOverlay>
       </Flex>
-    </Link>
+    </LinkBox>
+    // </Link>
     // </Button>
   );
 }

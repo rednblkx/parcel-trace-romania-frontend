@@ -10,8 +10,9 @@ import {
   useLocation,
   Link,
   useNavigate,
+  useOutletContext,
 } from "react-router-dom";
-import { useEffect } from "react";
+import { useRef } from "react";
 import "./App.css";
 import Card from "./Card";
 import NavBar from "./NavBar";
@@ -24,7 +25,7 @@ function App() {
   // let location = useLocation();987036795
   const navigation = useNavigation();
   
-  
+  let focusRef = useRef<HTMLDivElement>(null);
   // const navigate = useNavigate();
   // useEffect(() => {
   //   navigate("/shipments")
@@ -33,7 +34,7 @@ function App() {
   return (
     <>
       <NavBar />
-      <ShipmentsList />
+      <ShipmentsList ref={focusRef} />
       {/* <Center
         pos="absolute"
         right="12"
@@ -86,9 +87,14 @@ function App() {
           <Heading fontSize="1xl">Shipment marked as delivered</Heading>
         </Center>
       </Box> */}
-      <Outlet />
+      <Outlet context={{focusRef}} />
     </>
   );
 }
 
 export default App;
+
+
+export function useFocusRefOnModalClose() {
+  return useOutletContext<React.RefObject<HTMLDivElement>>();
+}

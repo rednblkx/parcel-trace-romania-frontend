@@ -75,7 +75,7 @@ function ShipmentAdd() {
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          <Flex>
+          <Flex align="center">
             <Link to="..">
               <IconButton aria-label="Back" icon={<MdArrowBack />} mr="2" />
             </Link>
@@ -85,13 +85,13 @@ function ShipmentAdd() {
         <ModalBody>
           <Form method="post" action="/shipment/add" style={{ width: "100%" }}>
             <Input placeholder="Tracking ID" type="text" name="id" mb="2" />
-            <Select placeholder="Select carrier" mb="2" name="carrier">
+            <Select placeholder="Select carrier" mb="4" name="carrier">
               {/* <option value="DPD">DPD</option> */}
               {data.map((row) => (
                 <option value={row.id} key={row.id}>{row.name}</option>
               ))}
             </Select>
-            <Center w="100%" mt="4" flexDirection="column">
+            <Center w="100%" mb="4" flexDirection="column">
               {actionsData && <Text mb="2">{actionsData}</Text>}
               <Button type="submit">
                 Add <Icon as={BsPlus} />
