@@ -54,7 +54,7 @@ const router = createBrowserRouter([
           let carriers_local = await localforage.getItem<carriers[]>(
             "carriers"
           );
-          if (!carriers_local) {
+          // if (!carriers_local) {
             const supabaseUrl = "https://ebdhdneueqnvpgmgcjvl.supabase.co";
             const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
             const supabase = createClient<
@@ -66,8 +66,11 @@ const router = createBrowserRouter([
               .from("carriers")
               .select("*")) as PostgrestResponse<carriers>;
             await localforage.setItem<carriers[] | null>("carriers", carriers);
-            return carriers;
+          if (carriers_local !== carriers && carriers !== null) {
+            carriers_local = carriers;
+            await localforage.setItem<carriers[] | null>("carriers", carriers);
           }
+          // }
           return carriers_local;
         },
       },
