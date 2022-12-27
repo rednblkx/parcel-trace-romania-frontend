@@ -58,9 +58,9 @@ import {
 import { TbTruckLoading } from "react-icons/tb";
 import { BsCheck } from "react-icons/bs";
 import { carriers } from "./shipmentAdd";
-import { IRes } from "../main";
+import { IRes } from "../../main";
 import { IconType } from "react-icons/lib";
-import { useFocusRefOnModalClose } from "../App";
+import { useFocusRefOnModalClose } from "../../App";
 
 const DELIVERED = 99;
 const SAMEDAY_LOADED_LOCKER = 78;

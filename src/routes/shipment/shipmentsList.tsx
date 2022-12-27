@@ -1,18 +1,9 @@
 import {
-  Box,
-  Flex,
-  VStack,
-  Stack,
-  Heading,
-  Text,
-  SimpleGrid,
+  Stack
 } from "@chakra-ui/layout";
 import localforage from "localforage";
-import { Outlet, useLoaderData } from "react-router-dom";
-import Card from "../Card";
-import { useRef } from "react";
-import { Button, CardBody, CardFooter, Icon } from "@chakra-ui/react";
-import { FaWarehouse } from "react-icons/fa";
+import { useLoaderData } from "react-router-dom";
+import Card from "../../Card";
 
 interface shipmentHistory {
   status: string;
@@ -37,17 +28,17 @@ export async function getShipmentList() {
   return list ?? null;
 }
 
-function ShipmentsList({ ...atr }) {
+function ShipmentsList() {
   let list = useLoaderData() as IShipment[];
   return (
     <>
       <Stack
         p="2"
         direction={["column", "row"]}
-        wrap="wrap"
-        justify="space-around"
+        wrap={["nowrap", "wrap"]}
+        justify={["unset","space-around"]}
         alignContent="center"
-        {...atr}
+        h="calc(100dvh - var(--chakra-sizes-14))"
       >
         {list?.map((el) => (
           <Card
