@@ -1,19 +1,14 @@
-import { Button } from "@chakra-ui/button";
 import { Icon } from "@chakra-ui/icon";
 import {
   Box,
   Flex,
-  Heading,
   LinkBox,
   LinkOverlay,
-  Spacer,
   Text,
 } from "@chakra-ui/layout";
 import { useColorMode } from "@chakra-ui/react";
-import { useCallback, useEffect } from "react";
-import { MdCabin } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
-import { status_icons } from "./routes/shipmentDetails";
+import { status_icons } from "./routes/shipment/shipmentDetails";
 import { FaArrowRight } from "react-icons/fa";
 
 function Card({ id, status, statusId, ...rest }: any) {
@@ -39,9 +34,10 @@ function Card({ id, status, statusId, ...rest }: any) {
         boxSizing="border-box"
         flexDirection="row"
         align={"center"}
-        w={["100%", "max-content"]}
-        maxW={["350px", "300px"]}
+        // w={["100%", "max-content"]}
+        maxW={["100%", "300px"]}
         mb={["0", "5"]}
+      // minW={["100%"]}
         {...rest}
       >
         <Icon as={status_icons[statusId]} w={8} h={8} mr={4} />

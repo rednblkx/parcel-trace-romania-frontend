@@ -1,24 +1,14 @@
-import { Box, Center, Flex, Heading, StackDivider, Text, VStack } from "@chakra-ui/layout";
 import {
-  createBrowserRouter,
-  RouterProvider,
-  Route,
   Outlet,
-  redirect,
-  Navigate,
   useNavigation,
-  useLocation,
   Link,
-  useNavigate,
   useOutletContext,
 } from "react-router-dom";
 import { useRef } from "react";
 import "./App.css";
-import Card from "./Card";
 import NavBar from "./NavBar";
-import ShipmentDetails from "./routes/shipmentDetails";
-import ShipmentsList from "./routes/shipmentsList";
-import { Button, Icon, IconButton, Spinner } from "@chakra-ui/react";
+import ShipmentsList from "./routes/shipment/shipmentsList";
+import { Button, Icon, Spinner } from "@chakra-ui/react";
 import { BsPlus } from "react-icons/bs";
 
 function App() {
@@ -26,6 +16,7 @@ function App() {
   const navigation = useNavigation();
   
   let focusRef = useRef<HTMLDivElement>(null);
+  
   // const navigate = useNavigate();
   // useEffect(() => {
   //   navigate("/shipments")
@@ -34,7 +25,7 @@ function App() {
   return (
     <>
       <NavBar />
-      <ShipmentsList ref={focusRef} />
+      <ShipmentsList/>
       {/* <Center
         pos="absolute"
         right="12"

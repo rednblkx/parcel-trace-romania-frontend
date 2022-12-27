@@ -37,8 +37,6 @@ export interface carriers {
 }
 
 async function createEntry(id: string, status: string, carrier: number) {
-  console.log(carrier);
-
   let parcel = {
     id,
     status: status,
@@ -49,6 +47,12 @@ async function createEntry(id: string, status: string, carrier: number) {
     history: [],
   };
   let list: IShipment[] | null = await localforage.getItem("shipmentList");
+  let found_obj = list?.find(el => el.id === id);
+
+  if (found_obj) {
+    return found_obj
+  }
+  
   list?.unshift(parcel);
   await localforage.setItem("shipmentList", list || [parcel]);
   return parcel;
@@ -65,10 +69,11 @@ export async function action({ request, params }: any) {
 }
 
 function ShipmentAdd() {
-  const { colorMode, toggleColorMode } = useColorMode();
+  // const { colorMode, toggleColorMode } = useColorMode();
   const data = useLoaderData() as carriers[];
   const navigate = useNavigate();
   const actionsData = useActionData() as string;
+  const activeCarriers = data.filter(el => el.active === true)
   
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
@@ -87,7 +92,7 @@ function ShipmentAdd() {
             <Input placeholder="Tracking ID" type="text" name="id" mb="2" />
             <Select placeholder="Select carrier" mb="4" name="carrier">
               {/* <option value="DPD">DPD</option> */}
-              {data.map((row) => (
+              {activeCarriers.map((row) => (
                 <option value={row.id} key={row.id}>{row.name}</option>
               ))}
             </Select>

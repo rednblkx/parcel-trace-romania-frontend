@@ -1,28 +1,29 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ChakraProvider, ColorModeScript } from "@chakra-ui/react";
 import {
   createBrowserRouter,
   RouterProvider,
-  Route,
   redirect,
 } from "react-router-dom";
 import "./index.css";
 import ErrorPage from "./error-page";
-import ShipmentDetails, { getShipment } from "./routes/shipmentDetails";
-import ShipmentsList, {
+import ShipmentDetails, { getShipment } from "./routes/shipment/shipmentDetails";
+import {
   getShipmentList,
   IShipment,
-} from "./routes/shipmentsList";
+} from "./routes/shipment/shipmentsList";
 import ShipmentAdd, {
   action as addAction,
   carriers,
-} from "./routes/shipmentAdd";
+} from "./routes/shipment/shipmentAdd";
 import theme from "./theme";
 import { createClient, PostgrestResponse } from "@supabase/supabase-js";
 import localforage from "localforage";
-import ShipmentRemove from "./routes/shipmentRemove";
+import ShipmentRemove from "./routes/shipment/shipmentRemove";
+import SignIn from "./routes/auth/signIn";
+import SignUp from "./routes/auth/signUp";
+import AuthProfile from "./routes/auth/authProfile";
 
 interface IEventsHistory {
   status: string;
@@ -39,6 +40,10 @@ export interface IRes {
   eventsHistory: IEventsHistory[];
 }
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -46,6 +51,48 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     loader: getShipmentList,
     children: [
+      {
+        path: "profile",
+        element: <AuthProfile />,
+        loader: async () => {
+          try {
+            const { data, error } = await supabase.auth.getUser();
+            console.error(error)
+            if (data.user == null) {
+              console.log(data.user);
+              return redirect("/auth/login")
+            } else return data.user
+            // if (error != null) {
+            //   throw error
+            // }
+          } catch (error) {
+            console.error(error)
+          }
+        }
+      },
+      {
+        path: "auth/login",
+        element: <SignIn />,
+        loader: async () => {
+          try {
+            const { data, error } = await supabase.auth.getUser();
+            console.error(error)
+            if (data.user != null) {
+              // console.log(data.user);
+              return redirect("/profile")
+            }
+            // if (error != null) {
+            //   throw error
+            // }
+          } catch (error) {
+            console.error(error)
+          }
+        }
+      },
+      {
+        path: "auth/signup",
+        element: <SignUp/>
+      },
       {
         path: "shipment/add",
         element: <ShipmentAdd />,
@@ -55,17 +102,10 @@ const router = createBrowserRouter([
             "carriers"
           );
           // if (!carriers_local) {
-            const supabaseUrl = "https://ebdhdneueqnvpgmgcjvl.supabase.co";
-            const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-            const supabase = createClient<
-              carriers,
-              "id" | "name" | "created_at" | "active",
-              any
-            >(supabaseUrl, supabaseKey);
-            let { data: carriers, error } = (await supabase
-              .from("carriers")
-              .select("*")) as PostgrestResponse<carriers>;
-            await localforage.setItem<carriers[] | null>("carriers", carriers);
+          let { data: carriers, error } = (await supabase
+            .from("carriers")
+            .select("*")) as PostgrestResponse<carriers>;
+          await localforage.setItem<carriers[] | null>("carriers", carriers);
           if (carriers_local !== carriers && carriers !== null) {
             carriers_local = carriers;
             await localforage.setItem<carriers[] | null>("carriers", carriers);
@@ -91,10 +131,12 @@ const router = createBrowserRouter([
 
           if (list[parcel].statusId == 99) {
             console.log("Shipment finalised");
-            return "Shipment finalised"
+            return "Shipment finalised";
           }
           if (diffsMinutes < 30 && list[parcel].history?.length > 0) {
-            console.log(`too early for update, last update ${diffsMinutes} minute ago`);
+            console.log(
+              `too early for update, last update ${diffsMinutes} minute ago`
+            );
 
             return `too early for update, last update ${diffsMinutes} minute ago`;
           }
@@ -102,19 +144,16 @@ const router = createBrowserRouter([
           if (parcel === -1) return { error: "AWB not found" };
 
           try {
-            let api_res: IRes = await (
-              await fetch(import.meta.env.VITE_SUPABASE_FUNCTIONS_URI, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  // 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_KEY}`
-                },
-                body: JSON.stringify({
-                  carrier_id: list[parcel].carrier,
-                  tracking_id: list[parcel].id,
-                }),
-              })
-            ).json();
+            const { data: api_res, error } = await supabase.functions.invoke('trace-parcel', {
+              body: {
+                carrier_id: list[parcel].carrier,
+                tracking_id: list[parcel].id,
+              }
+            })
+
+            if (api_res === null && error) {
+              throw error
+            }
 
             let new_status: IShipment = {
               ...list[parcel],
