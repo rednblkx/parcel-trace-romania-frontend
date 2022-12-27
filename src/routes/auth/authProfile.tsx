@@ -24,45 +24,16 @@ import { Link, useLoaderData, useNavigate } from "react-router-dom";
 
 import { FcGoogle } from 'react-icons/fc';
 import { Center } from '@chakra-ui/react';
+import { useAuth } from "../../Auth";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-function GoogleButton({onClick}: {onClick: Function}) {
-  return (
-    <Center p={8}>
-      <Button
-        onClick={() => onClick()}
-        w={'full'}
-        maxW={'md'}
-        variant={'outline'}
-        leftIcon={<FcGoogle />}>
-        <Center>
-          <Text>Sign in with Google</Text>
-        </Center>
-      </Button>
-    </Center>
-  );
-}
-
-
-async function signInWithGoogle() {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-  })
-  console.log(data);
-  
-}
-
-async function signout() {
-  const { error } = await supabase.auth.signOut()
-  console.error(error)
-}
-
 function AuthProfile() {
   let navigate = useNavigate();
-  let userInfo = useLoaderData() as User | null;
+  // let userInfo = useLoaderData() as User | null;
+  let { user, signOut } = useAuth()
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
@@ -92,14 +63,18 @@ function AuthProfile() {
         </ModalHeader>
         {/* <ModalCloseButton /> */}
         <ModalBody>
-          {(userInfo && (
-            <Flex align="center">
-              <Icon w="16" h="16" as={FaUserCircle} mr="2"/>
-              <Heading>{userInfo.user_metadata.full_name}</Heading>
+          {(user && (
+            <Flex align="center" mb="2">
+              <Icon w="12" h="12" as={FaUserCircle} mr="2" />
+              <Flex direction="column">
+                <Heading>{user.user_metadata.full_name}</Heading>
+                <Text>{user.email}</Text>
+              </Flex>
               <Spacer />
-              <Button onClick={() => signout()}>Sign out</Button>
+              <Button onClick={() => { navigate("/auth/login"); signOut();}}>Sign out</Button>
             </Flex>
-          )) || (
+          ))
+            || (
             <Flex
               flexDirection="column"
               w="100%"
@@ -107,10 +82,11 @@ function AuthProfile() {
               justifyContent="space-around"
               alignItems="center"
             >
-              <GoogleButton onClick={signInWithGoogle}/>
+              <Heading>Not logged in!</Heading>
               {/* <Button as={Link} to="/auth/signup">Sign up</Button> */}
             </Flex>
-          )}
+            )
+          }
         </ModalBody>
       </ModalContent>
     </Modal>
