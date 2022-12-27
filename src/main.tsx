@@ -24,6 +24,8 @@ import ShipmentRemove from "./routes/shipment/shipmentRemove";
 import SignIn from "./routes/auth/signIn";
 import SignUp from "./routes/auth/signUp";
 import AuthProfile from "./routes/auth/authProfile";
+import { AuthProvider } from "./Auth";
+import { supabase } from "./supabase";
 
 interface IEventsHistory {
   status: string;
@@ -40,10 +42,6 @@ export interface IRes {
   eventsHistory: IEventsHistory[];
 }
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 const router = createBrowserRouter([
   {
     path: "/",
@@ -59,7 +57,7 @@ const router = createBrowserRouter([
             const { data, error } = await supabase.auth.getUser();
             console.error(error)
             if (data.user == null) {
-              console.log(data.user);
+              // console.log(data.user);
               return redirect("/auth/login")
             } else return data.user
             // if (error != null) {
@@ -197,9 +195,11 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   // <React.StrictMode>
-  <ChakraProvider theme={theme}>
-    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
-    <RouterProvider router={router} />
-  </ChakraProvider>
+  <AuthProvider>
+    <ChakraProvider theme={theme}>
+      <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+      <RouterProvider router={router} />
+    </ChakraProvider>
+  </AuthProvider>
   // </React.StrictMode>
 );

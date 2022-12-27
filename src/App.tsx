@@ -10,6 +10,7 @@ import NavBar from "./NavBar";
 import ShipmentsList from "./routes/shipment/shipmentsList";
 import { Button, Icon, Spinner } from "@chakra-ui/react";
 import { BsPlus } from "react-icons/bs";
+import { AuthProvider } from "./Auth";
 
 function App() {
   // let location = useLocation();987036795
