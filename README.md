@@ -4,9 +4,19 @@ A web application for tracking parcels made with React and Chakra UI, using Supa
 
 ## Features
 
-- Monitor for updates on the parcel with a cron job running inside the supabase PostgreSQL database using the pg_cron extension
+- Monitoring for updates on the backend using pg_cron and sending notifications via ntfy.sh
 - Check for updates on the parcel every 31th minute by calling an edge function on supabase
 - User-friendly interface built with Chakra UI
+
+## Prerequisites
+
+- Node.js and npm or yarn installed
+- A supabase project and database set up at [supabase.com](https://supabase.com)
+- Check Supabase local development [guide](https://supabase.com/docs/guides/resources/supabase-cli/local-development)
+- Have a Google account and Google Cloud Console project set up to enable OAuth Authentication(as only Google is enabled on Auth component) and use the monitoring feature
+- The following environment variables set in the `.env` file:
+  - `VITE_SUPABASE_KEY`: Your supabase API key
+  - `VITE_SUPABASE_URL`: Your supabase URL
 
 ## Installation
 
@@ -15,16 +25,18 @@ To install and run the app, follow these steps:
 1. Clone the repository: `git clone https://github.com/redmusicxd/parcel-trace-romania-frontend.git`
 2. Navigate to the project directory: `cd parcel-trace-romania-frontend`
 3. Install the dependencies: `npm install` or `yarn install`
-4. Run the app with Vite: `npm run dev` or `yarn dev`
+4. Set the environment variables in the `.env` file:
+  - `VITE_SUPABASE_KEY`: Your supabase API key
+  - `VITE_SUPABASE_URL`: Your supabase URL
+5. Start the development server: `npm run dev` or `yarn dev`
 
-## Configuration
+## Deployment
 
-The app requires the following environment variables to be set in order to connect to the supabase backend:
+To deploy the app, run the following command:
 
-- `VITE_SUPABASE_KEY`: The API key for the supabase backend
-- `VITE_SUPABASE_URL`: The URL for the supabase backend
+`npm run build or yarn build`
 
-You can set these environment variables in a .env file in the root of the project, or by using a tool like `dotenv`.
+This will build the app and generate a `dist` directory with the static files. You can then host the app on any static file host, such as GitHub Pages or Vercel.
 
 ## Backend
 
