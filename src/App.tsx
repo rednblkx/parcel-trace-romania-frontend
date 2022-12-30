@@ -2,30 +2,28 @@ import {
   Outlet,
   useNavigation,
   Link,
-  useOutletContext,
 } from "react-router-dom";
-import { useRef } from "react";
 import "./App.css";
 import NavBar from "./NavBar";
 import ShipmentsList from "./routes/shipment/shipmentsList";
 import { Button, Icon, Spinner } from "@chakra-ui/react";
 import { BsPlus } from "react-icons/bs";
-import { AuthProvider } from "./Auth";
+import localforage from "localforage";
+import CarrierList from "./carriers.json"
 
 function App() {
-  // let location = useLocation();987036795
+
+  localforage.getItem("carriers").then(async element => {
+    if (!element) {
+      await localforage.setItem("carriers", CarrierList)
+    }
+  })
   const navigation = useNavigation();
   
-  let focusRef = useRef<HTMLDivElement>(null);
-  
-  // const navigate = useNavigate();
-  // useEffect(() => {
-  //   navigate("/shipments")
-  // }, [])
   
   return (
     <>
-      <NavBar />
+      <NavBar/>
       <ShipmentsList/>
       {/* <Center
         pos="absolute"
@@ -79,7 +77,7 @@ function App() {
           <Heading fontSize="1xl">Shipment marked as delivered</Heading>
         </Center>
       </Box> */}
-      <Outlet context={{focusRef}} />
+      <Outlet/>
     </>
   );
 }
@@ -87,6 +85,6 @@ function App() {
 export default App;
 
 
-export function useFocusRefOnModalClose() {
-  return useOutletContext<React.RefObject<HTMLDivElement>>();
-}
+// export function useFocusRefOnModalClose() {
+//   return useOutletContext<React.RefObject<HTMLDivElement>>();
+// }

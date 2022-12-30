@@ -8,17 +8,20 @@ import {
 } from "react-router-dom";
 import "./index.css";
 import ErrorPage from "./error-page";
-import ShipmentDetails, { getShipment } from "./routes/shipment/shipmentDetails";
-import {
-  getShipmentList,
-  IShipment,
-} from "./routes/shipment/shipmentsList";
+import ShipmentDetails, {
+  getShipment,
+} from "./routes/shipment/shipmentDetails";
+import { getShipmentList, IShipment } from "./routes/shipment/shipmentsList";
 import ShipmentAdd, {
   action as addAction,
-  carriers,
+  ICarriers,
 } from "./routes/shipment/shipmentAdd";
 import theme from "./theme";
-import { createClient, PostgrestResponse } from "@supabase/supabase-js";
+import {
+  createClient,
+  PostgrestError,
+  PostgrestResponse,
+} from "@supabase/supabase-js";
 import localforage from "localforage";
 import ShipmentRemove from "./routes/shipment/shipmentRemove";
 import SignIn from "./routes/auth/signIn";
@@ -42,6 +45,21 @@ export interface IRes {
   eventsHistory: IEventsHistory[];
 }
 
+export interface IParcelMonitor {
+  id: number;
+  tracking_id: string;
+  carrier_id: { name: string };
+  user_id: string;
+  created_at: Date;
+  last_updated: Date;
+  statusId: number;
+}
+
+export interface IParcelMonitorResponse {
+  data: IParcelMonitor[];
+  error?: PostgrestError | Error | null;
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -55,18 +73,36 @@ const router = createBrowserRouter([
         loader: async () => {
           try {
             const { data, error } = await supabase.auth.getUser();
-            console.error(error)
+            if (error) console.error(error);
             if (data.user == null) {
               // console.log(data.user);
-              return redirect("/auth/login")
-            } else return data.user
+              return redirect("/auth/login");
+            } else {
+              let { data: parcels, error: errorDB } = (await supabase
+                .from("parcels_monitoring")
+                .select(
+                  "*, carrier_id ( name )"
+                )) as PostgrestResponse<IParcelMonitor>;
+
+              console.log(parcels);
+              let res: IParcelMonitorResponse = {
+                data: parcels ?? [],
+                error: errorDB,
+              };
+              return res;
+            }
             // if (error != null) {
             //   throw error
             // }
-          } catch (error) {
-            console.error(error)
+          } catch (error: any) {
+            console.error(error);
+            let res: IParcelMonitorResponse = {
+              data: [],
+              error: error?.message || new Error(error),
+            };
+            return res;
           }
-        }
+        },
       },
       {
         path: "auth/login",
@@ -74,42 +110,60 @@ const router = createBrowserRouter([
         loader: async () => {
           try {
             const { data, error } = await supabase.auth.getUser();
-            console.error(error)
+            console.error(error);
             if (data.user != null) {
               // console.log(data.user);
-              return redirect("/profile")
+              return redirect("/profile");
             }
             // if (error != null) {
             //   throw error
             // }
           } catch (error) {
-            console.error(error)
+            console.error(error);
           }
-        }
+        },
       },
       {
-        path: "auth/signup",
-        element: <SignUp/>
+        path: "auth/logout",
+        loader: async () => {
+          try {
+            await supabase.auth.signOut();
+            return redirect("/auth/login");
+          } catch (error) {
+            console.error(error);
+          }
+        },
       },
       {
         path: "shipment/add",
         element: <ShipmentAdd />,
         action: addAction,
         loader: async () => {
-          let carriers_local = await localforage.getItem<carriers[]>(
-            "carriers"
-          );
-          // if (!carriers_local) {
-          let { data: carriers, error } = (await supabase
-            .from("carriers")
-            .select("*")) as PostgrestResponse<carriers>;
-          await localforage.setItem<carriers[] | null>("carriers", carriers);
-          if (carriers_local !== carriers && carriers !== null) {
-            carriers_local = carriers;
-            await localforage.setItem<carriers[] | null>("carriers", carriers);
+          try {
+            let carriers_local = await localforage.getItem<ICarriers[]>(
+              "carriers"
+            );
+            // if (!carriers_local) {
+            let { data: carriers, error } = (await supabase
+              .from("carriers")
+              .select("*")) as PostgrestResponse<ICarriers>;
+
+            await localforage.setItem<ICarriers[] | null>("carriers", carriers);
+            if (carriers_local !== carriers && carriers !== null) {
+              carriers_local = carriers;
+              await localforage.setItem<ICarriers[] | null>(
+                "carriers",
+                carriers
+              );
+            }
+            // }
+            return { data: carriers_local, error };
+          } catch (error: any) {
+            return {
+              data: null,
+              error: error?.message ?? new Error(error),
+            };
           }
-          // }
-          return carriers_local;
         },
       },
       {
@@ -142,15 +196,18 @@ const router = createBrowserRouter([
           if (parcel === -1) return { error: "AWB not found" };
 
           try {
-            const { data: api_res, error } = await supabase.functions.invoke('trace-parcel', {
-              body: {
-                carrier_id: list[parcel].carrier,
-                tracking_id: list[parcel].id,
+            const { data: api_res, error } = await supabase.functions.invoke(
+              "trace-parcel",
+              {
+                body: {
+                  carrier_id: list[parcel].carrier,
+                  tracking_id: list[parcel].id,
+                },
               }
-            })
+            );
 
             if (api_res === null && error) {
-              throw error
+              throw error;
             }
 
             let new_status: IShipment = {

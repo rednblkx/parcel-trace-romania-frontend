@@ -26,6 +26,7 @@ import {
   Progress,
   Skeleton,
   SkeletonCircle,
+  Tooltip,
   useColorMode,
   useDisclosure,
   useToast,
@@ -41,11 +42,12 @@ import {
   useSubmit,
   useActionData,
 } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IShipment } from "./shipmentsList";
 import localforage from "localforage";
 import {
   FaBalanceScale,
+  FaBell,
   FaBox,
   FaClipboardList,
   FaClock,
@@ -57,10 +59,12 @@ import {
 } from "react-icons/fa";
 import { TbTruckLoading } from "react-icons/tb";
 import { BsCheck } from "react-icons/bs";
-import { carriers } from "./shipmentAdd";
-import { IRes } from "../../main";
+import { ICarriers } from "./shipmentAdd";
+import { IParcelMonitor, IParcelMonitorResponse, IRes } from "../../main";
 import { IconType } from "react-icons/lib";
-import { useFocusRefOnModalClose } from "../../App";
+import { supabase } from "../../supabase";
+import { PostgrestError, PostgrestResponse } from "@supabase/supabase-js";
+import { useAuth } from "../../Auth";
 
 const DELIVERED = 99;
 const SAMEDAY_LOADED_LOCKER = 78;
@@ -82,14 +86,49 @@ export const status_icons: { [id: number]: IconType } = {
   [CARGUS_WEIGHTING]: FaBalanceScale,
   [SAMEDAY_LOADED_LOCKER]: TbTruckLoading,
   [SAMEDAY_BUSY_LOCKER]: FaClock,
+  255: FaBox
 };
+
+interface IShipmentResponse {
+  data: {
+    carriers: ICarriers[] | null,
+    shipment: IShipment | null,
+    // watched_parcels: IParcelMonitor[] | null
+  },
+  error?: PostgrestError | null
+}
 
 export async function getShipment(trackingid: string) {
   let list: IShipment[] | null = await localforage.getItem("shipmentList");
-  let carriers: carriers[] | null = await localforage.getItem("carriers");
-  let shipment = list?.find((el) => el.id === trackingid);
+  let carriers: ICarriers[] | null = await localforage.getItem("carriers");
+  let res: IShipmentResponse;
+  let shipment = list?.find((el) => el.id === trackingid) ?? null;
+  // let { data: watched_parcels, error } = await supabase.from("parcels_monitoring").select("*") as PostgrestResponse<IParcelMonitor>;
+  
+  if (!carriers) {
+    let { data: list_carriers, error } = await supabase.from("carriers").select("*") as PostgrestResponse<ICarriers>;
+    
+    await localforage.setItem("carriers", list_carriers);
+    carriers = list_carriers
+    res = {
+      data: {
+        carriers,
+        shipment,
+        // watched_parcels
+      },
+      error
+    }
+  }
+  res = {
+    data: {
+      carriers,
+      shipment,
+      // watched_parcels,
+    },
+    // error
+  }
 
-  return { carriers, shipment };
+  return res;
 }
 
 async function markDelivered(tracking_id: string) {
@@ -141,19 +180,44 @@ function StepDetail({
   );
 }
 
-interface loaderData {
-  carriers: carriers[];
-  shipment: IShipment;
-}
+// interface loaderData {
+//   carriers: ICarriers[];
+//   shipment: IShipment;
+// }
 
 function ShipmentDetails() {
   let { trackingid } = useParams() as { trackingid: string };
-  let { carriers, shipment } = useLoaderData() as loaderData;
+  let { data: {carriers, shipment}, error } = useLoaderData() as IShipmentResponse;
   let navigate = useNavigate();
   let submit = useSubmit();
   let focusRef = useRef(null);
   let toast = useToast();
-  let focusRefClose = useFocusRefOnModalClose();
+  let { user } = useAuth();
+  let [isWatched, setIsWatched] = useState(false)
+console.log(user);
+
+  useEffect(() => {
+    if (user) {
+      let parcels = supabase.from("parcels_monitoring").select("*");
+      parcels.then(({error, data}) => {
+        setIsWatched(data?.find(a => a.tracking_id == trackingid) ? true : false)
+      })
+    } else setIsWatched(true)
+  }, [])
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Something went wrong',
+        description: error.message,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    }
+  }, [])
+
+  // let focusRefClose = useFocusRefOnModalClose();
 
   useEffect(() => {
     submit(null, { method: "post", action: `/shipment/${trackingid}` });
@@ -167,13 +231,13 @@ function ShipmentDetails() {
         isCentered={true}
         scrollBehavior="inside"
         initialFocusRef={focusRef}
-        finalFocusRef={focusRefClose}
+        // finalFocusRef={focusRefClose}
       >
         <ModalOverlay />
         <ModalContent minH="300px">
           <ModalHeader>
             <Grid
-              templateColumns="var(--chakra-sizes-10) 1fr"
+              templateColumns="var(--chakra-sizes-10) 1fr var(--chakra-sizes-12)"
               alignItems="center"
               gap="2"
               // align="center"
@@ -194,8 +258,33 @@ function ShipmentDetails() {
                   #{trackingid}
                 </Heading>
                 <Heading as="h3" size="sm" noOfLines={1}>
-                  {shipment.status}
+                  {shipment?.status}
                 </Heading>
+              </GridItem>
+              <GridItem>
+              <Tooltip hasArrow label={shipment?.statusId == 255 ? 'Not supported for this carrier' : user ? 'Parcel already added' : "Sign in needed"} isDisabled={shipment?.statusId == 255 ? false : !isWatched}>
+                <Button disabled={shipment?.statusId == 255 ? true : isWatched} onClick={async () => {
+                  let { error } = await supabase.from("parcels_monitoring").insert({ tracking_id: shipment?.id, carrier_id: shipment?.carrier, user_id: user?.id, statusId: shipment?.statusId, count_events: shipment?.history.length })
+                  
+                  if (error) {
+                    toast({
+                      title: 'Something went wrong',
+                      description: error.message,
+                      status: 'error',
+                      duration: 3000,
+                      isClosable: true,
+                    })
+                  } else {
+                    toast({
+                      title: `Parcel ${shipment?.id} added`,
+                      description: "Shipment added to the watching list",
+                      status: 'success',
+                      duration: 3000,
+                      isClosable: true,
+                    })
+                    setIsWatched(true)
+                  }
+                }}><Icon as={FaBell}></Icon></Button></Tooltip>
               </GridItem>
             </Grid>
           </ModalHeader>
@@ -242,8 +331,8 @@ function ShipmentDetails() {
                 </Box>
                 <Divider orientation="horizontal" />
                 <Text>
-                  Carrier:{" "}
-                  {carriers.find((id) => shipment.carrier === id.id)?.name}
+                  Carrier:
+                  {carriers?.find((id) => shipment?.carrier === id.id)?.name || shipment.carrier_name}
                 </Text>
                 <Text>
                   Added At: {new Date(shipment.createdAt).toLocaleString()}
@@ -254,7 +343,7 @@ function ShipmentDetails() {
                 <Divider orientation="horizontal" />
               </VStack>
             ) : (
-              <Center w="100%">
+              <Center w="100%" ref={focusRef}>
                 <Heading>Shipment not added</Heading>
               </Center>
             )}

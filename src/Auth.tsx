@@ -11,8 +11,11 @@ export function AuthProvider({ children } : {children: any}) {
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     // Check active sessions and sets the user
-    const session = supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    }).catch((error) => {
+      console.error(error);
+      
     })
 
     setLoading(false)
