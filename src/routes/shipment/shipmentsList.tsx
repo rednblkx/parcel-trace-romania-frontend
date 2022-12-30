@@ -16,6 +16,7 @@ interface shipmentHistory {
 export interface IShipment {
   id: string;
   carrier: number;
+  carrier_name: string | undefined;
   status: string;
   statusId: number;
   createdAt: Date;

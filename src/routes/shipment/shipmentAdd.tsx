@@ -13,6 +13,7 @@ import {
   ModalOverlay,
   Select,
   useColorMode,
+  useToast,
 } from "@chakra-ui/react";
 import localforage from "localforage";
 import { MdArrowBack, MdCabin } from "react-icons/md";
@@ -26,33 +27,41 @@ import {
   useNavigation,
 } from "react-router-dom";
 import { IShipment } from "./shipmentsList";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, PostgrestError } from "@supabase/supabase-js";
 import { BsPlus } from "react-icons/bs";
+import { useEffect } from "react";
 
-export interface carriers {
+export interface ICarriers {
   id: number;
   name: string;
   created_at: string;
   active: boolean;
 }
 
+interface ICarriersResponse {
+  data: ICarriers[];
+  error: PostgrestError | null;
+}
+
 async function createEntry(id: string, status: string, carrier: number) {
-  let parcel = {
+  let list_carriers: ICarriers[] | null = await localforage.getItem("carriers")
+  let parcel : IShipment = {
     id,
     status: status,
     statusId: 255,
-    createdAt: new Date,
+    createdAt: new Date(),
     carrier: Number(carrier),
-    updatedAt: new Date,
+    carrier_name: list_carriers?.find(a => a.id === Number(carrier))?.name,
+    updatedAt: new Date(),
     history: [],
   };
   let list: IShipment[] | null = await localforage.getItem("shipmentList");
-  let found_obj = list?.find(el => el.id === id);
+  let found_obj = list?.find((el) => el.id === id);
 
   if (found_obj) {
-    return found_obj
+    return found_obj;
   }
-  
+
   list?.unshift(parcel);
   await localforage.setItem("shipmentList", list || [parcel]);
   return parcel;
@@ -62,7 +71,7 @@ export async function action({ request, params }: any) {
   const formData = await request.formData();
   const id: string = formData.get("id");
   const carrier: number = formData.get("carrier");
-  let error = null
+  let error = null;
 
   await createEntry(id, "", carrier);
   return error ?? redirect(`/shipment/${id}`);
@@ -70,11 +79,25 @@ export async function action({ request, params }: any) {
 
 function ShipmentAdd() {
   // const { colorMode, toggleColorMode } = useColorMode();
-  const data = useLoaderData() as carriers[];
+  const { data, error } = useLoaderData() as ICarriersResponse;
   const navigate = useNavigate();
   const actionsData = useActionData() as string;
-  const activeCarriers = data.filter(el => el.active === true)
+  const activeCarriers = data?.filter((el) => el.active === true);
+  const toast = useToast();
   
+  useEffect(() => {
+    error && console.error(error);
+    error &&
+      toast({
+        title: "Something went wrong",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+  },[])
+
+
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
@@ -92,8 +115,10 @@ function ShipmentAdd() {
             <Input placeholder="Tracking ID" type="text" name="id" mb="2" />
             <Select placeholder="Select carrier" mb="4" name="carrier">
               {/* <option value="DPD">DPD</option> */}
-              {activeCarriers.map((row) => (
-                <option value={row.id} key={row.id}>{row.name}</option>
+              {activeCarriers?.map((row) => (
+                <option value={row.id} key={row.id}>
+                  {row.name}
+                </option>
               ))}
             </Select>
             <Center w="100%" mb="4" flexDirection="column">
