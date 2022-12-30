@@ -41,3 +41,5 @@ Contributions are welcomed to this app. If you would like to contribute, please 
 ## License
 
 The Parcel Tracking App is licensed under the [MIT License](LICENSE).
+
+This README.md file was written using OpenAI's ChatGPT
