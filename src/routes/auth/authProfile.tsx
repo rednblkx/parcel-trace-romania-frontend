@@ -6,6 +6,8 @@ import {
   CardBody,
   Divider,
   Flex,
+  FormControl,
+  FormLabel,
   Grid,
   GridItem,
   Heading,
@@ -18,21 +20,33 @@ import {
   ModalHeader,
   ModalOverlay,
   Spacer,
+  Switch,
   Text,
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import { createClient, User } from "@supabase/supabase-js";
 import { FaUserCircle } from "react-icons/fa";
 import { MdArrowBack } from "react-icons/md";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
-
-import { FcGoogle } from "react-icons/fc";
-import { Center } from "@chakra-ui/react";
 import { useAuth } from "../../Auth";
 import { IParcelMonitor, IParcelMonitorResponse } from "../../main";
 import { supabase } from "../../supabase";
 import { useEffect, useState } from "react";
+
+function base64UrlToUint8Array(base64UrlData: string) {
+  const padding = "=".repeat((4 - (base64UrlData.length % 4)) % 4);
+  const base64 = (base64UrlData + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const buffer = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    buffer[i] = rawData.charCodeAt(i);
+  }
+  return buffer;
+}
 
 function AuthProfile() {
   let navigate = useNavigate();
@@ -40,6 +54,12 @@ function AuthProfile() {
   let toast = useToast();
 
   let [shipments, setShipments] = useState(loader?.data ?? []);
+  let [permission, setPermission] = useState(Notification.permission);
+  let [notificationEnabled, setNotifications] = useState(false)
+
+  const publicApplicationKey = base64UrlToUint8Array(
+    "BMBXR2-2GL2qPY7u-w6ICu3vmzJPa89M_63e35-DZvycuVQsHs4FPzwLB6AsV0spANBpoVYz1UzJLOrNHe0z_Hg"
+  );
 
   useEffect(() => {
     if (loader?.error) {
@@ -53,9 +73,57 @@ function AuthProfile() {
         isClosable: true,
       });
     }
+    navigator.serviceWorker.ready.then(reg => {
+      reg.pushManager.getSubscription().then(subscription => {
+        subscription && setNotifications(true)
+      });
+    });
   }, []);
 
   let { user } = useAuth();
+
+  const permissionRequest = async () => {
+    if (!notificationEnabled) {
+      const permission = await Notification.requestPermission();
+  
+      setPermission(permission);
+
+      if (permission == "granted") {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicApplicationKey,
+        });
+
+        setNotifications(true)
+  
+        let res = await fetch("api/subscription", {
+          method: "POST",
+          body: JSON.stringify({ ...subscription.toJSON(), user_id: user?.id }),
+          headers: { "Content-Type": "application/json" },
+        });
+        console.log(res);
+      }
+
+    } else {
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.getSubscription();
+      const endpoint = subscription?.endpoint
+      subscription
+      ?.unsubscribe()
+        .then(async (successful) => {
+          // You've successfully unsubscribed
+          console.log("Push notifications unsubscribed");
+          const {error} = await supabase.from("subscriptions").delete().eq("endpoint", endpoint);
+          console.log(error);
+          setNotifications(false)
+      })
+      .catch((e) => {
+        // Unsubscribing failed
+        console.log("Push notifications unsubscribe failed!");
+      });
+    }
+  };
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
@@ -98,8 +166,28 @@ function AuthProfile() {
                   Sign out
                 </Button>
               </Flex>
-              <Flex mt="2">
-                <Text>Your Ntfy.sh link: <b><a href={`https://ntfy.kodeeater.xyz/parcel-romania-${user.id.slice(0, 8)}`}>https://ntfy.kodeeater.xyz/parcel-romania-{user.id.slice(0, 8)}</a></b> </Text>
+              <Flex mt="2" direction="column">
+                {/* <Text>
+                  Your Ntfy.sh link:{" "}
+                  <b>
+                    <a
+                      href={`https://ntfy.kodeeater.xyz/parcel-romania-${user.id.slice(
+                        0,
+                        8
+                      )}`}
+                    >
+                      https://ntfy.kodeeater.xyz/parcel-romania-
+                      {user.id.slice(0, 8)}
+                    </a>
+                  </b>{" "}
+                </Text> */}
+
+                <FormControl display="flex" alignItems="center" mt={2}>
+                  <FormLabel htmlFor="push-notifications" mb="0">
+                    Enable notifications?
+                  </FormLabel>
+                  <Switch id="push-notifications" isChecked={notificationEnabled} onChange={permissionRequest}/>
+                </FormControl>
               </Flex>
             </>
           )) || (
