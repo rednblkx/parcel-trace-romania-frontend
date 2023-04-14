@@ -1,7 +1,7 @@
 import { Button } from "@chakra-ui/button";
 import { Icon } from "@chakra-ui/icon";
 import { Flex, Spacer } from "@chakra-ui/layout";
-import { MdLightMode, MdDarkMode } from "react-icons/md";
+import { MdLightMode, MdDarkMode, MdMail } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { Input, useColorMode } from "@chakra-ui/react";
 import { FaUserCircle } from "react-icons/fa";
@@ -9,6 +9,8 @@ import { FaUserCircle } from "react-icons/fa";
 function NavBar() {
   // const navigate = useNavigate();
   const { colorMode, toggleColorMode } = useColorMode();
+
+
 
   return (
     <Flex
@@ -39,7 +41,7 @@ function NavBar() {
         bg={colorMode === "dark" ? "blackAlpha.400" : "whiteAlpha.400"}
       >
         <Icon w="4" h="4" as={colorMode === "light" ? MdLightMode : MdDarkMode} />
-      </Button>{" "}
+      </Button>
       <Button
         variant="ghost"
         // shadow="md"
