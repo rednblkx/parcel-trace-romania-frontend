@@ -194,7 +194,23 @@ function ShipmentDetails() {
   let toast = useToast();
   let { user } = useAuth();
   let [isWatched, setIsWatched] = useState(false)
-console.log(user);
+
+  const [isMobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const userAgent =
+      typeof window.navigator === "undefined" ? "" : navigator.userAgent;
+    console.log(navigator.userAgent);
+    
+    const mobile = Boolean(
+      userAgent.match(
+        /Android|BlackBerry|iPhone|Macintosh|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i
+      )
+    );
+    console.log(mobile);
+    
+    setMobile(mobile);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -262,7 +278,7 @@ console.log(user);
                 </Heading>
               </GridItem>
               <GridItem>
-              <Tooltip hasArrow isOpen={shipment?.statusId == 255 ? true : user ? false: true} label={shipment?.statusId == 255 ? 'Not supported for this carrier' : user ? 'Parcel already added' : "Sign in needed"} isDisabled={shipment?.statusId == 255 ? false : !isWatched}>
+              <Tooltip hasArrow isOpen={isMobile} label={shipment?.statusId == 255 ? 'Not supported for this carrier' : user ? 'Parcel already added' : "Sign in needed"} isDisabled={shipment?.statusId == 255 ? false : !isWatched}>
                 <Button disabled={shipment?.statusId == 255 ? true : isWatched} onClick={async () => {
                   let { error } = await supabase.from("parcels_monitoring").insert({ tracking_id: shipment?.id, carrier_id: shipment?.carrier, user_id: user?.id, statusId: shipment?.statusId, count_events: shipment?.history.length })
                   
