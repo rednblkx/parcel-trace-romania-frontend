@@ -1,7 +1,7 @@
 import {
+  Avatar,
   Box,
   Button,
-  ButtonGroup,
   Card,
   CardBody,
   Divider,
@@ -11,11 +11,9 @@ import {
   Grid,
   GridItem,
   Heading,
-  Icon,
   IconButton,
   Modal,
   ModalBody,
-  ModalCloseButton,
   ModalContent,
   ModalHeader,
   ModalOverlay,
@@ -54,7 +52,6 @@ function AuthProfile() {
   let toast = useToast();
 
   let [shipments, setShipments] = useState(loader?.data ?? []);
-  let [permission, setPermission] = useState(Notification.permission);
   let [notificationEnabled, setNotifications] = useState(false)
 
   const publicApplicationKey = base64UrlToUint8Array(
@@ -83,10 +80,8 @@ function AuthProfile() {
   let { user } = useAuth();
 
   const permissionRequest = async () => {
-    if (!notificationEnabled) {
+    if (!notificationEnabled && Notification) {
       const permission = await Notification.requestPermission();
-  
-      setPermission(permission);
 
       if (permission == "granted") {
         const reg = await navigator.serviceWorker.ready;
@@ -133,13 +128,6 @@ function AuthProfile() {
             templateColumns="var(--chakra-sizes-10) 1fr"
             alignItems="center"
             gap="2"
-            // align="center"
-            // w="100%"
-            // p="5"
-            // pos="sticky"
-            // top="0"
-            // bg={colorMode === "light" ? "whiteAlpha.900" : "gray.900"}
-            // shadow="md"
           >
             <GridItem>
               <Link to="..">
@@ -156,7 +144,7 @@ function AuthProfile() {
           {(user && (
             <>
               <Flex align="center">
-                <Icon w="12" h="12" as={FaUserCircle} mr="2" />
+                <Avatar src={user.user_metadata.avatar_url} mr="2"/>
                 <Flex direction="column" flex="1">
                   <Heading>{user.user_metadata.full_name}</Heading>
                   <Text>{user.email}</Text>
