@@ -84,7 +84,6 @@ const router = createBrowserRouter([
                   "*, carrier_id ( name )"
                 )) as PostgrestResponse<IParcelMonitor>;
 
-              console.log(parcels);
               let res: IParcelMonitorResponse = {
                 data: parcels ?? [],
                 error: errorDB,
@@ -185,13 +184,13 @@ const router = createBrowserRouter([
             console.log("Shipment finalised");
             return "Shipment finalised";
           }
-          if (diffsMinutes < 30 && list[parcel].history?.length > 0) {
-            console.log(
-              `too early for update, last update ${diffsMinutes} minute ago`
-            );
+          // if (diffsMinutes < 30 && list[parcel].history?.length > 0) {
+          //   console.log(
+          //     `too early for update, last update ${diffsMinutes} minute ago`
+          //   );
 
-            return `too early for update, last update ${diffsMinutes} minute ago`;
-          }
+          //   return `too early for update, last update ${diffsMinutes} minute ago`;
+          // }
 
           if (parcel === -1) return { error: "AWB not found" };
 
