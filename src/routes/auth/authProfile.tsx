@@ -4,16 +4,17 @@ import {
   Button,
   Card,
   CardBody,
+  CloseButton,
   Divider,
   Flex,
   FormControl,
+  FormErrorMessage,
   FormLabel,
-  Grid,
-  GridItem,
   Heading,
   IconButton,
   Modal,
   ModalBody,
+  ModalCloseButton,
   ModalContent,
   ModalHeader,
   ModalOverlay,
@@ -52,7 +53,10 @@ function AuthProfile() {
   let toast = useToast();
 
   let [shipments, setShipments] = useState(loader?.data ?? []);
-  let [notificationEnabled, setNotifications] = useState(false)
+  let [notificationEnabled, setNotifications] = useState(false);
+  let [supported, setSupported] = useState(
+    navigator.serviceWorker && Notification ? true : false
+  );
 
   const publicApplicationKey = base64UrlToUint8Array(
     "BMBXR2-2GL2qPY7u-w6ICu3vmzJPa89M_63e35-DZvycuVQsHs4FPzwLB6AsV0spANBpoVYz1UzJLOrNHe0z_Hg"
@@ -70,81 +74,81 @@ function AuthProfile() {
         isClosable: true,
       });
     }
-    navigator.serviceWorker.ready.then(reg => {
-      reg.pushManager.getSubscription().then(subscription => {
-        subscription && setNotifications(true)
+    navigator.serviceWorker &&
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.pushManager.getSubscription().then((subscription) => {
+          subscription && setNotifications(true);
+        });
       });
-    });
   }, []);
 
   let { user } = useAuth();
 
   const permissionRequest = async () => {
-    if (!notificationEnabled && Notification) {
-      const permission = await Notification.requestPermission();
+    if (navigator.serviceWorker && Notification) {
+      if (!notificationEnabled) {
+        const permission = await Notification.requestPermission();
 
-      if (permission == "granted") {
+        if (permission == "granted") {
+          const reg = await navigator.serviceWorker.ready;
+          const subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: publicApplicationKey,
+          });
+
+          setNotifications(true);
+
+          let res = await fetch("api/subscription", {
+            method: "POST",
+            body: JSON.stringify({
+              ...subscription.toJSON(),
+              user_id: user?.id,
+            }),
+            headers: { "Content-Type": "application/json" },
+          });
+          console.log(res);
+        }
+      } else {
         const reg = await navigator.serviceWorker.ready;
-        const subscription = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: publicApplicationKey,
-        });
-
-        setNotifications(true)
-  
-        let res = await fetch("api/subscription", {
-          method: "POST",
-          body: JSON.stringify({ ...subscription.toJSON(), user_id: user?.id }),
-          headers: { "Content-Type": "application/json" },
-        });
-        console.log(res);
+        const subscription = await reg.pushManager.getSubscription();
+        const endpoint = subscription?.endpoint;
+        subscription
+          ?.unsubscribe()
+          .then(async (successful) => {
+            // You've successfully unsubscribed
+            console.log("Push notifications unsubscribed");
+            const { error } = await supabase
+              .from("subscriptions")
+              .delete()
+              .eq("endpoint", endpoint);
+            console.log(error);
+            setNotifications(false);
+          })
+          .catch((e) => {
+            // Unsubscribing failed
+            console.log("Push notifications unsubscribe failed!");
+          });
       }
-
     } else {
-      const reg = await navigator.serviceWorker.ready;
-      const subscription = await reg.pushManager.getSubscription();
-      const endpoint = subscription?.endpoint
-      subscription
-      ?.unsubscribe()
-        .then(async (successful) => {
-          // You've successfully unsubscribed
-          console.log("Push notifications unsubscribed");
-          const {error} = await supabase.from("subscriptions").delete().eq("endpoint", endpoint);
-          console.log(error);
-          setNotifications(false)
-      })
-      .catch((e) => {
-        // Unsubscribing failed
-        console.log("Push notifications unsubscribe failed!");
-      });
+      setSupported(false);
     }
   };
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          <Grid
-            templateColumns="var(--chakra-sizes-10) 1fr"
-            alignItems="center"
-            gap="2"
-          >
-            <GridItem>
-              <Link to="..">
-                <IconButton aria-label="Back" icon={<MdArrowBack />} mr="2" />
-              </Link>
-            </GridItem>
-            <GridItem>
-              <Text>Your profile</Text>
-            </GridItem>
-          </Grid>
+        <ModalHeader display="flex" alignItems="center">
+          <Link to="..">
+            <IconButton aria-label="Back" icon={<MdArrowBack />} mr="2" />
+          </Link>
+          <Text>Your profile</Text>
         </ModalHeader>
-        {/* <ModalCloseButton /> */}
+        {/* <ModalCloseButton mt={1} /> */}
         <ModalBody>
           {(user && (
             <>
               <Flex align="center">
-                <Avatar src={user.user_metadata.avatar_url} mr="2"/>
+                <Avatar src={user.user_metadata.avatar_url} mr="2" />
                 <Flex direction="column" flex="1">
                   <Heading>{user.user_metadata.full_name}</Heading>
                   <Text>{user.email}</Text>
@@ -155,27 +159,39 @@ function AuthProfile() {
                 </Button>
               </Flex>
               <Flex mt="2" direction="column">
-                {/* <Text>
-                  Your Ntfy.sh link:{" "}
-                  <b>
-                    <a
-                      href={`https://ntfy.kodeeater.xyz/parcel-romania-${user.id.slice(
-                        0,
-                        8
-                      )}`}
-                    >
-                      https://ntfy.kodeeater.xyz/parcel-romania-
-                      {user.id.slice(0, 8)}
-                    </a>
-                  </b>{" "}
-                </Text> */}
-
-                <FormControl display="flex" alignItems="center" mt={2}>
-                  <FormLabel htmlFor="push-notifications" mb="0">
-                    Enable notifications?
-                  </FormLabel>
-                  <Switch id="push-notifications" isChecked={notificationEnabled} onChange={permissionRequest}/>
+                <FormControl isInvalid={!supported}>
+                  <Flex align="center">
+                    <FormLabel htmlFor="push-notifications" mb="0">
+                      Enable notifications?
+                    </FormLabel>
+                    <Switch
+                      id="push-notifications"
+                      isChecked={notificationEnabled}
+                      onChange={permissionRequest}
+                      isDisabled={!supported}
+                    />
+                  </Flex>
+                  <FormErrorMessage>
+                    ServiceWorkers or Notifications API not supported by your
+                    browser, use Ntfy.sh(link below).
+                  </FormErrorMessage>
                 </FormControl>
+                {!supported && (
+                  <Text mt={2}>
+                    Your Ntfy.sh link:{" "}
+                    <b>
+                      <a
+                        href={`https://ntfy.kodeeater.xyz/parcel-romania-${user.id.slice(
+                          0,
+                          8
+                        )}`}
+                      >
+                        https://ntfy.kodeeater.xyz/parcel-romania-
+                        {user.id.slice(0, 8)}
+                      </a>
+                    </b>
+                  </Text>
+                )}
               </Flex>
             </>
           )) || (

@@ -4,6 +4,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import webpush from "web-push"
+import axios from "axios"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
           for (const sub of dataS) {
             await webpush.sendNotification(sub, JSON.stringify({carrier: el.carrier_id.name, tracking_id: el.tracking_id, status: dataF.status, county: dataF?.eventsHistory[0].county})).catch((err) => console.error(err));
           }
+          await axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${el.user_id.slice(0, 8)}`, `${el.carrier_id.name} \n ${el.tracking_id} - ${dataF?.status}, ${dataF?.eventsHistory[0].county}`)
           if (dataF.statusId == 99 || dataF.statusId == 255) {
             const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", el.tracking_id)
             if (errorL) {
@@ -62,7 +64,7 @@ export default async function handler(req, res) {
           }
         }
         // console.log(res.data);
-        await timeout(4000)
+        // await timeout(1000)
       }
     }
     res.setHeader("Access-Control-Allow-Origin", "*");

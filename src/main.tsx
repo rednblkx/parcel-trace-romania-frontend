@@ -27,7 +27,7 @@ import ShipmentRemove from "./routes/shipment/shipmentRemove";
 import SignIn from "./routes/auth/signIn";
 import SignUp from "./routes/auth/signUp";
 import AuthProfile from "./routes/auth/authProfile";
-import { AuthProvider } from "./Auth";
+import { AuthProvider, useAuth } from "./Auth";
 import { supabase } from "./supabase";
 
 interface IEventsHistory {
