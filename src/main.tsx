@@ -48,7 +48,7 @@ export interface IRes {
 export interface IParcelMonitor {
   id: number;
   tracking_id: string;
-  carrier_id: { name: string };
+  carrier_id: {id: number, name: string };
   user_id: string;
   created_at: Date;
   last_updated: Date;
