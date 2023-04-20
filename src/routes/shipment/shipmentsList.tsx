@@ -39,7 +39,8 @@ function ShipmentsList() {
         wrap={["nowrap", "wrap"]}
         justify={["unset","space-around"]}
         alignContent="center"
-        h="calc(100dvh - var(--chakra-sizes-14))"
+        h="var(--content-size)"
+        pos="relative"
       >
         {list?.map((el) => (
           <Card

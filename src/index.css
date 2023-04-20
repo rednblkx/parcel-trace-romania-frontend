@@ -6,3 +6,7 @@
   width: 100vw;
   height: 100vh;
 } */
+
+:root {
+  --content-size: calc(100dvh - var(--chakra-sizes-14))
+}

@@ -262,7 +262,7 @@ console.log(user);
                 </Heading>
               </GridItem>
               <GridItem>
-              <Tooltip hasArrow label={shipment?.statusId == 255 ? 'Not supported for this carrier' : user ? 'Parcel already added' : "Sign in needed"} isDisabled={shipment?.statusId == 255 ? false : !isWatched}>
+              <Tooltip hasArrow isOpen={shipment?.statusId == 255 ? true : user ? false: true} label={shipment?.statusId == 255 ? 'Not supported for this carrier' : user ? 'Parcel already added' : "Sign in needed"} isDisabled={shipment?.statusId == 255 ? false : !isWatched}>
                 <Button disabled={shipment?.statusId == 255 ? true : isWatched} onClick={async () => {
                   let { error } = await supabase.from("parcels_monitoring").insert({ tracking_id: shipment?.id, carrier_id: shipment?.carrier, user_id: user?.id, statusId: shipment?.statusId, count_events: shipment?.history.length })
                   

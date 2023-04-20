@@ -110,6 +110,7 @@ function ShipmentAdd() {
             <Heading>Add Shipment</Heading>
           </Flex>
         </ModalHeader>
+        {/* <ModalCloseButton mt={1} /> */}
         <ModalBody>
           <Form method="post" action="/shipment/add" style={{ width: "100%" }}>
             <Input placeholder="Tracking ID" type="text" name="id" mb="2" />
