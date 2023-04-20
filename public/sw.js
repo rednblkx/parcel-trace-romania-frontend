@@ -21,7 +21,7 @@ self.addEventListener("push", e => {
 });
 
 self.addEventListener("notificationclick", (event) => {
-  console.log("On notification click");
+  // console.log("On notification click");
 
   // Data can be attached to the notification so that you
   // can process it in the notificationclick handler.

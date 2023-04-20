@@ -200,14 +200,12 @@ function ShipmentDetails() {
   useEffect(() => {
     const userAgent =
       typeof window.navigator === "undefined" ? "" : navigator.userAgent;
-    console.log(navigator.userAgent);
     
     const mobile = Boolean(
       userAgent.match(
         /Android|BlackBerry|iPhone|Macintosh|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i
       )
     );
-    console.log(mobile);
     
     setMobile(mobile);
   }, []);
