@@ -52,10 +52,10 @@ export default async function handler(req, res) {
           }
           // axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${shipment.user_id.slice(0, 8)}`, `${shipment.carrier_id.name} \n ${shipment.tracking_id} - ${data?.data.status}, ${data?.data.eventsHistory[0].county}`)
           if (data.data.statusId == 99 || data.data.statusId == 255) {
-            // const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
-            // if (errorL) {
-            //   console.log(errorL);
-            // }
+            const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
+            if (errorL) {
+              console.log(errorL);
+            }
           } else {
             const { error: errorL } = await supabase.from("parcels_monitoring").update({statusId: data?.data?.statusId, last_updated: new Date(), count_events: data?.data.eventsHistory.length }).eq("tracking_id", shipment.tracking_id)
             if (errorL) {
