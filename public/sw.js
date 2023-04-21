@@ -1,8 +1,8 @@
-// import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 
-// cleanupOutdatedCaches()
+cleanupOutdatedCaches()
 
-// precacheAndRoute(self.__WB_MANIFEST)
+precacheAndRoute(self.__WB_MANIFEST)
 
 self.addEventListener('install', () => {
 	self.skipWaiting();
