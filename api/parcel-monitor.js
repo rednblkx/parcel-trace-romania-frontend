@@ -30,47 +30,50 @@ export default async function handler(req, res) {
     const thirtyMinutesBefore = new Date();
     thirtyMinutesBefore.setMinutes(thirtyMinutesBefore.getMinutes() - 30);
     
-    const {data, error} = await supabase.from("parcels_monitoring").select("tracking_id, carrier_id(id, name), user_id, count_events").lte( "last_updated", thirtyMinutesBefore.toISOString())
+    const {data: parcels, error} = await supabase.from("parcels_monitoring").select("tracking_id, carrier_id(id, name), user_id, count_events").lte( "last_updated", thirtyMinutesBefore.toISOString())
     
     if (error) {
       throw error
     }
-    
-    if (data && data.length > 0) {
-      for await (const el of data) {
-        // console.log(el);
-        const { data: dataF, error } = await supabase.functions.invoke("trace-parcel", { body: { tracking_id: el.tracking_id, carrier_id: el.carrier_id.id } })
-        error && console.log(error);
-        const { error: errorI } = await supabase.from("parcels_monitoring").update({ statusId: dataF?.statusId, last_updated: new Date() }).eq("tracking_id", el.tracking_id)
-        if (errorI) {
-          console.log(errorI);
-        }
-        if (dataF && el.count_events < dataF?.eventsHistory.length) {
-          const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", el.user_id)
+    let promises = parcels.map(obj => supabase.functions.invoke("trace-parcel", { body: { tracking_id: obj.tracking_id, carrier_id: obj.carrier_id.id } }));
+    if (parcels && parcels.length > 0) {
+      await Promise.all(promises).then(async result => {
+        let notifications = []
+        for (const data of result) {
+          let shipment = parcels.find(a => a.tracking_id.includes(data.data.awbNumber));
+        // const { error: errorI } = await supabase.from("parcels_monitoring").update({ statusId: data?.data?.statusId, last_updated: new Date() }).eq("tracking_id", shipment.tracking_id)
+        // if (errorI) {
+        //   console.log(errorI);
+        // }
+        if (data.data && shipment.count_events < data?.data?.eventsHistory.length) {
+          const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
           for (const sub of dataS) {
-            await webpush.sendNotification(sub, JSON.stringify({carrier: el.carrier_id.name, tracking_id: el.tracking_id, status: dataF.status, county: dataF?.eventsHistory[0].county})).catch((err) => console.error(err));
+            notifications.push({sub, data: {carrier: shipment.carrier_id.name, tracking_id: shipment.tracking_id, status: data.data.status, county: data?.data?.eventsHistory[0].county}})
           }
-          await axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${el.user_id.slice(0, 8)}`, `${el.carrier_id.name} \n ${el.tracking_id} - ${dataF?.status}, ${dataF?.eventsHistory[0].county}`)
-          if (dataF.statusId == 99 || dataF.statusId == 255) {
-            const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", el.tracking_id)
-            if (errorL) {
-              console.log(errorL);
-            }
+          // axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${shipment.user_id.slice(0, 8)}`, `${shipment.carrier_id.name} \n ${shipment.tracking_id} - ${data?.data.status}, ${data?.data.eventsHistory[0].county}`)
+          if (data.data.statusId == 99 || data.data.statusId == 255) {
+            // const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
+            // if (errorL) {
+            //   console.log(errorL);
+            // }
           } else {
-            const { error: errorL } = await supabase.from("parcels_monitoring").update({ count_events: dataF?.eventsHistory.length }).eq("tracking_id", el.tracking_id)
+            const { error: errorL } = await supabase.from("parcels_monitoring").update({statusId: data?.data?.statusId, last_updated: new Date(), count_events: data?.data.eventsHistory.length }).eq("tracking_id", shipment.tracking_id)
             if (errorL) {
               console.log(errorL);
             }
           }
         }
-        // console.log(res.data);
-        // await timeout(1000)
-      }
+        }
+        return notifications
+      }).then(async a => {
+        console.log(a.length);
+          await Promise.all(a.map(b => webpush.sendNotification(b.sub, JSON.stringify(b.data))))
+      })
     }
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
     res.status(200).json(
-      data
+      parcels
     )
   } catch (error) {
     console.log(error);

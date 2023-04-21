@@ -10,7 +10,7 @@ export default defineConfig({
       name: 'Parcel Tracer',
       short_name: 'Parcel Tracer',
       description: 'Parcel tracing for romanian carriers',
-      theme_color: '#ffffff',
+      theme_color: '#1A202C',
       icons: [
         {
           src: 'android-chrome-192x192.png',
