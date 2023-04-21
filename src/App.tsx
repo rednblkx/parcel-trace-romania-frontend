@@ -2,10 +2,11 @@ import { Outlet, useNavigation, Link } from "react-router-dom";
 import "./App.css";
 import NavBar from "./NavBar";
 import ShipmentsList from "./routes/shipment/shipmentsList";
-import { Button, Center, Flex, Icon, Spinner } from "@chakra-ui/react";
+import { Button, Flex, Icon, Spinner, useColorModeValue } from "@chakra-ui/react";
 import { BsPlus } from "react-icons/bs";
 import localforage from "localforage";
 import CarrierList from "./carriers.json";
+import { useEffect } from "react";
 
 function App() {
   localforage.getItem("carriers").then(async (element) => {
@@ -14,10 +15,15 @@ function App() {
     }
   });
   const navigation = useNavigation();
+  const colorMode = useColorModeValue("#ffffff", "#1A202C")
+
+  useEffect(() => {
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colorMode)
+  }, [colorMode])
 
   return (
     <>
-      {navigation.state === "loading" && <Flex bgColor="blackAlpha.600" pos="absolute" align={"center"} justify="center" w="full" h="full" zIndex="9999">
+      {navigation.state === "loading" && <Flex bgColor="blackAlpha.600" pos="absolute" align={"center"} justify="center" w="full" h="100dvh" zIndex="9999">
         <Spinner size={"xl"} color="white"/>
       </Flex>}
       <NavBar />
