@@ -173,10 +173,10 @@ function AuthProfile() {
                   </Flex>
                   <FormErrorMessage>
                     ServiceWorkers or Notifications API not supported by your
-                    browser, use Ntfy.sh(link below).
+                    browser.
                   </FormErrorMessage>
                 </FormControl>
-                {!supported && (
+                {/* {!supported && (
                   <Text mt={2}>
                     Your Ntfy.sh link:{" "}
                     <b>
@@ -191,7 +191,7 @@ function AuthProfile() {
                       </a>
                     </b>
                   </Text>
-                )}
+                )} */}
               </Flex>
             </>
           )) || (
@@ -212,10 +212,10 @@ function AuthProfile() {
               <Heading as="h3" size="lg" mb="4" textAlign="center">
                 Watched Parcels
               </Heading>
-              <VStack align="left" mb="2">
+              <VStack align="left" mb="2" maxH={["10rem", "30rem"]} overflow="auto">
                 {shipments.length ? (
-                  shipments.map((parcel) => (
-                    <Card bgColor="whiteAlpha.200">
+                  shipments.map((parcel, i) => (
+                    <Card bgColor="whiteAlpha.200" key={i}>
                       <CardBody display="flex" alignItems="center">
                         <Box>
                           <Text>{parcel.tracking_id}</Text>
