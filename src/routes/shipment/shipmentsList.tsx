@@ -15,6 +15,7 @@ interface shipmentHistory {
   county: string;
   country: string;
   statusDate: string;
+  transitLocation: string;
 }
 
 export interface IShipment {

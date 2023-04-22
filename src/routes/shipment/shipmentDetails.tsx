@@ -154,13 +154,17 @@ async function markDelivered(tracking_id: string) {
 function StepDetail({
   status,
   statusId,
-  location,
+  country,
+  county,
   statusDate,
+  transit
 }: {
   status: string;
   statusId: number;
-  location: string;
+  country: string;
+  county: string;
   statusDate: string;
+  transit: string;
 }) {
   return (
     <Flex direction="row" align="center" p="3">
@@ -170,8 +174,11 @@ function StepDetail({
           {status}
         </Heading>
         <Text textAlign="start" mt={2}>
-          {location}
+          {country ? `${country}, ${county}` : county}
         </Text>
+        {transit && <Text>
+          <b>Transit:</b> {transit}
+        </Text>}
         <Text textAlign="start" mt={2}>
           {new Date(statusDate).toLocaleString()}
         </Text>
@@ -179,11 +186,6 @@ function StepDetail({
     </Flex>
   );
 }
-
-// interface loaderData {
-//   carriers: ICarriers[];
-//   shipment: IShipment;
-// }
 
 function ShipmentDetails() {
   let { trackingid } = useParams() as { trackingid: string };
@@ -254,13 +256,6 @@ function ShipmentDetails() {
               templateColumns="var(--chakra-sizes-10) 1fr var(--chakra-sizes-12)"
               alignItems="center"
               gap="2"
-              // align="center"
-              // w="100%"
-              // p="5"
-              // pos="sticky"
-              // top="0"
-              // bg={colorMode === "light" ? "whiteAlpha.900" : "gray.900"}
-              // shadow="md"
             >
               <GridItem>
                 <Link to="..">
@@ -268,7 +263,7 @@ function ShipmentDetails() {
                 </Link>
               </GridItem>
               <GridItem noOfLines={1}>
-                <Heading w={"100%"} noOfLines={1}>
+                <Heading size="lg" noOfLines={1}>
                   #{trackingid}
                 </Heading>
                 <Heading as="h3" size="sm" noOfLines={1}>
@@ -312,8 +307,10 @@ function ShipmentDetails() {
                       status={el.status}
                       statusId={el.statusId}
                       key={`${el.status + el.statusDate + i}`}
-                      location={`${el.country ?? ""} ${el.county}`}
+                      country={el.country}
+                      county={el.county}
                       statusDate={el.statusDate}
+                      transit={el.transitLocation}
                     />
                   )) || null}
                   {/* {shipment.history?.length === 0 && (
@@ -336,8 +333,7 @@ function ShipmentDetails() {
                 </Box>
                 <Divider orientation="horizontal" />
                 <Text>
-                  Carrier:
-                  {carriers?.find((id) => shipment?.carrier === id.id)?.name || shipment.carrier_name}
+                  Carrier: {carriers?.find((id) => shipment?.carrier === id.id)?.name || shipment.carrier_name}
                 </Text>
                 <Text>
                   Added At: {new Date(shipment?.createdAt).toLocaleString()}
