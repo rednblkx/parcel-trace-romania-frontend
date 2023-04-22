@@ -29,9 +29,9 @@ export default async function handler(req, res) {
     const supabase = createClient(process.env.VITE_SUPABASE_URL || "", process.env.VITE_SUPABASE_SERVICE_KEY || "")
     const thirtyMinutesBefore = new Date();
     thirtyMinutesBefore.setMinutes(thirtyMinutesBefore.getMinutes() - 30);
-    
-    const {data: parcels, error} = await supabase.from("parcels_monitoring").select("tracking_id, carrier_id(id, name), user_id, count_events").lte( "last_updated", thirtyMinutesBefore.toISOString())
-    
+
+    const { data: parcels, error } = await supabase.from("parcels_monitoring").select("tracking_id, carrier_id(id, name), user_id, count_events, last_updated").lte("last_checked", thirtyMinutesBefore.toISOString())
+
     if (error) {
       throw error
     }
@@ -40,34 +40,52 @@ export default async function handler(req, res) {
       await Promise.all(promises).then(async result => {
         let notifications = []
         for (const data of result) {
-          let shipment = parcels.find(a => a.tracking_id.includes(data.data.awbNumber));
-        // const { error: errorI } = await supabase.from("parcels_monitoring").update({ statusId: data?.data?.statusId, last_updated: new Date() }).eq("tracking_id", shipment.tracking_id)
-        // if (errorI) {
-        //   console.log(errorI);
-        // }
-        if (data.data && shipment.count_events < data?.data?.eventsHistory.length) {
-          const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
-          for (const sub of dataS) {
-            notifications.push({sub, data: {carrier: shipment.carrier_id.name, tracking_id: shipment.tracking_id, status: data.data.status, county: data?.data?.eventsHistory[0].county}})
-          }
-          // axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${shipment.user_id.slice(0, 8)}`, `${shipment.carrier_id.name} \n ${shipment.tracking_id} - ${data?.data.status}, ${data?.data.eventsHistory[0].county}`)
-          if (data.data.statusId == 99 || data.data.statusId == 255) {
-            const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
-            if (errorL) {
-              console.log(errorL);
+          try {
+            let shipment = parcels.find(a => a.tracking_id.includes(data.data.awbNumber));
+            if (data.data && shipment.count_events < data?.data?.eventsHistory.length) {
+              const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
+              for (const sub of dataS) {
+                notifications.push({ sub, data: { carrier: shipment.carrier_id.name, tracking_id: shipment.tracking_id, status: data.data.status, county: data?.data?.eventsHistory[0].county } })
+              }
+              // axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${shipment.user_id.slice(0, 8)}`, `${shipment.carrier_id.name} \n ${shipment.tracking_id} - ${data?.data.status}, ${data?.data.eventsHistory[0].county}`)
+              if (data.data.statusId == 99 || data.data.statusId == 255) {
+                const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
+                if (errorL) {
+                  console.log(errorL);
+                }
+              } else {
+                const { error: errorL } = await supabase.from("parcels_monitoring").update({ statusId: data?.data?.statusId, last_updated: new Date(), last_checked: new Date(), count_events: data?.data.eventsHistory.length }).eq("tracking_id", shipment.tracking_id)
+                if (errorL) {
+                  console.log(errorL);
+                }
+              }
+            } else {
+              if (((new Date() - new Date(shipment.last_updated).getTime()) / (1000 * 3600 * 24)).toFixed(0) > 10) {
+                const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
+                for (const sub of dataS) {
+                  notifications.push({sub, data: {carrier: shipment.carrier_id.name, tracking_id: shipment.tracking_id, status: "No updates in 10 days, removed from the watching list!", county: ""}})
+                }
+                const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
+                if (errorL) {
+                  console.log(errorL);
+                }
+              } else {
+                const { error: errorCheck } = await supabase.from("parcels_monitoring").update({ last_checked: new Date() }).eq("tracking_id", shipment.tracking_id)
+                if (errorCheck) {
+                  console.log(errorCheck);
+                }
+              }
             }
-          } else {
-            const { error: errorL } = await supabase.from("parcels_monitoring").update({statusId: data?.data?.statusId, last_updated: new Date(), count_events: data?.data.eventsHistory.length }).eq("tracking_id", shipment.tracking_id)
-            if (errorL) {
-              console.log(errorL);
-            }
+          } catch (error) {
+            console.error(error);
           }
-        }
         }
         return notifications
       }).then(async a => {
         console.log(a.length);
-          await Promise.all(a.map(b => webpush.sendNotification(b.sub, JSON.stringify(b.data))))
+        await Promise.all(a.map(b => webpush.sendNotification(b.sub, JSON.stringify(b.data))))
+      }).catch(err => {
+        console.error(err);
       })
     }
     res.setHeader("Access-Control-Allow-Origin", "*");
