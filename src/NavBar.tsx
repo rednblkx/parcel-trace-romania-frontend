@@ -1,16 +1,15 @@
 import { Button } from "@chakra-ui/button";
 import { Icon } from "@chakra-ui/icon";
 import { Flex, Spacer } from "@chakra-ui/layout";
-import { MdLightMode, MdDarkMode, MdMail } from "react-icons/md";
-import { Link, useNavigate } from "react-router-dom";
-import { Input, useColorMode } from "@chakra-ui/react";
+import { MdLightMode, MdDarkMode } from "react-icons/md";
+import { Link } from "react-router-dom";
+import { Avatar, Input, useColorMode } from "@chakra-ui/react";
 import { FaUserCircle } from "react-icons/fa";
+import { useAuth } from "./Auth";
 
 function NavBar() {
-  // const navigate = useNavigate();
+  const { user } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
-
-
 
   return (
     <Flex
@@ -23,13 +22,6 @@ function NavBar() {
       top="0"
       zIndex={1}
     >
-      {/* <Center h="12"> */}
-      {/* <Button m={2}><Icon as={MdMenu}></Icon></Button>
-        <Spacer/>
-        <Link to="/shipments/add"><Button m={2}>Add</Button></Link> */}
-      {/* <Button variant="ghost" shadow="md" m={2} style={{WebkitTapHighlightColor: 'transparent'}} bg={colorMode === "dark" ? "blackAlpha.400" : "whiteAlpha.400"}><Icon as={MdMenu}></Icon></Button> */}
-      {/* <Spacer/> */}
-      {/* <Heading>Shipments</Heading> */}
       <Input placeholder="Search Shipment" mx="2" shadow="sm" />
       <Spacer />
       <Button
@@ -37,25 +29,26 @@ function NavBar() {
         shadow="sm"
         onClick={toggleColorMode}
         style={{ WebkitTapHighlightColor: "transparent" }}
-        mx="2"
+        // mx="1"
         bg={colorMode === "dark" ? "blackAlpha.400" : "whiteAlpha.400"}
       >
-        <Icon w="4" h="4" as={colorMode === "light" ? MdLightMode : MdDarkMode} />
+        <Icon
+          w="4"
+          h="4"
+          as={colorMode === "light" ? MdLightMode : MdDarkMode}
+        />
       </Button>
       <Button
-        variant="ghost"
-        // shadow="md"
-        // onClick={toggleColorMode}
+        variant="link"
         as={Link}
         to="profile"
-        style={{ WebkitTapHighlightColor: "transparent" }}
-        mx="2"
-        bg={colorMode === "dark" ? "blackAlpha.400" : "whiteAlpha.400"}
+        // style={{ WebkitTapHighlightColor: "transparent" }}
+        mx="3"
+        py="2"
+        // bg={colorMode === "dark" ? "blackAlpha.400" : "whiteAlpha.400"}
       >
-        <Icon w="6" h="6" as={FaUserCircle} />
+        {user ? <Avatar name={user.user_metadata.full_name} src={ user.user_metadata.avatar_url } size="sm" /> : <Icon w="6" h="6" as={FaUserCircle} />}
       </Button>
-      {/* <Button variant="ghost" shadow="md" m={2} style={{WebkitTapHighlightColor: 'transparent'}} bg={colorMode === "dark" ? "blackAlpha.400" : "whiteAlpha.400"}><Icon as={MdSearch}></Icon></Button> */}
-      {/* </Center> */}
     </Flex>
   );
 }
