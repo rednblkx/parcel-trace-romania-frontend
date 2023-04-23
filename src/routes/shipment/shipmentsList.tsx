@@ -1,6 +1,4 @@
-import {
-  Stack
-} from "@chakra-ui/layout";
+import { Stack } from "@chakra-ui/layout";
 import { PostgrestResponse } from "@supabase/supabase-js";
 import localforage from "localforage";
 import { useEffect, useState } from "react";
@@ -8,6 +6,7 @@ import { useLoaderData } from "react-router-dom";
 import Card from "../../Card";
 import { IParcelMonitor } from "../../main";
 import { supabase } from "../../supabase";
+import { Flex, Heading, useColorModeValue } from "@chakra-ui/react";
 
 interface shipmentHistory {
   status: string;
@@ -38,22 +37,22 @@ export async function getShipmentList() {
 function ShipmentsList() {
   let list = useLoaderData() as IShipment[];
   let [shipments, setShipments] = useState(list);
-
+  let emptyColorMode = useColorModeValue("#757575", "#888888")
   useEffect(() => {
     setShipments(list);
-  }, [list])
+  }, [list]);
   useEffect(() => {
-
     (async () => {
       let { data: parcels, error: errorDB } = (await supabase
         .from("parcels_monitoring")
         .select(
           "*, carrier_id ( id, name )"
-      )) as PostgrestResponse<IParcelMonitor>;
+        )) as PostgrestResponse<IParcelMonitor>;
       if (parcels) {
-        var new_list: IShipment[] = await localforage.getItem("shipmentList") || [];
+        var new_list: IShipment[] =
+          (await localforage.getItem("shipmentList")) || [];
         for await (const data of parcels) {
-          let parcel : IShipment = {
+          let parcel: IShipment = {
             id: data.tracking_id,
             status: "",
             statusId: 255,
@@ -67,24 +66,25 @@ function ShipmentsList() {
           if (found_obj) {
             continue;
           }
-          
+
           new_list?.push(parcel);
         }
-        setShipments(new_list)
+        setShipments(new_list);
         await localforage.setItem("shipmentList", new_list);
       }
-    })()
-  }, [])
+    })();
+  }, []);
   return (
     <>
       <Stack
         p="2"
         direction={["column", "row"]}
         wrap={["nowrap", "wrap"]}
-        justify={["unset","space-around"]}
+        justify={[shipments?.length == 0 ? "center" : "unset", "space-around"]}
         alignContent="center"
-        // h={["var(--content-size)", "unset"]}
+        h={shipments?.length == 0 ? "var(--content-size)" : "unset"}
         pos="relative"
+        pb="4"
       >
         {shipments?.map((el) => (
           <Card
@@ -93,7 +93,12 @@ function ShipmentsList() {
             status={el.status}
             statusId={el.statusId}
           />
-        )) || null}
+        ))}
+        {shipments?.length == 0 && (
+          <Flex align="center" justify="center">
+            <Heading color={emptyColorMode}>No shipments</Heading>
+          </Flex>
+        )}
       </Stack>
       {/* <Outlet/> */}
     </>
