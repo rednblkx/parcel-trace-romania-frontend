@@ -6,7 +6,7 @@ import { serve } from "https://deno.land/std@0.131.0/http/server.ts"
 // import { createClient, PostgrestResponse } from 'https://esm.sh/@supabase/supabase-js@2'
 import axiod from "https://deno.land/x/axiod/mod.ts";
 // import cheerio from "https://esm.sh/cheerio"
-import { cheerio } from "https://deno.land/x/denocheerio@1.0.0/mod.ts";
+import cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
 import moment from "https://esm.sh/moment-timezone@0.5.43";
 
 const corsHeaders = {
