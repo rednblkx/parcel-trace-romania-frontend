@@ -27,11 +27,11 @@ export default async function handler(req, res) {
     }
     let promises = parcels.map(obj => supabase.functions.invoke("trace-parcel", { body: { tracking_id: obj.tracking_id, carrier_id: obj.carrier.id } }));
     if (parcels && parcels.length > 0) {
-      await Promise.all(promises).then(async result => {
+      let result = await Promise.all(promises);
         let notifications = []
         for (const data of result) {
           try {
-            let shipment = parcels.find(a => a.tracking_id.includes(data.data.awbNumber));
+            let shipment = parcels.find(a => a.tracking_id.includes(data.data?.awbNumber));
             if (data.data && shipment.count_events < data?.data?.eventsHistory.length) {
               // const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
               for (const sub of shipment.subscriptions) {
@@ -82,13 +82,8 @@ export default async function handler(req, res) {
             console.error(error);
           }
         }
-        return notifications
-      }).then(async a => {
-        console.log(a.length);
-        await Promise.all(a.map(b => webpush.sendNotification(b.sub, JSON.stringify(b.data))))
-      }).catch(err => {
-        console.error(err);
-      })
+        console.log(notifications.length);
+        await Promise.all(notifications.map(b => webpush.sendNotification(b.sub, JSON.stringify(b.data))))
     }
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
