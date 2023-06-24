@@ -23,7 +23,7 @@ function App() {
 
   return (
     <>
-      {navigation.state === "loading" && <Flex bgColor="blackAlpha.600" pos="absolute" align={"center"} justify="center" w="full" h="100dvh" zIndex="9999">
+      {navigation.state === "loading" && <Flex bgColor="blackAlpha.600" pos="fixed" align={"center"} justify="center" w="full" h="100dvh" zIndex="9999">
         <Spinner size={"xl"} color="white"/>
       </Flex>}
       <NavBar />

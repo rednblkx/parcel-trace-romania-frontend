@@ -82,8 +82,8 @@ function ShipmentsList() {
         wrap={["nowrap", "wrap"]}
         justify={[shipments?.length == 0 ? "center" : "unset", "space-around"]}
         alignContent="center"
-        h={shipments?.length == 0 ? "var(--content-size)" : "unset"}
-        pos="relative"
+        // h={shipments?.length == 0 ? "var(--content-size)" : "unset"}
+        // pos="relative"
         pb="4"
       >
         {shipments?.map((el) => (

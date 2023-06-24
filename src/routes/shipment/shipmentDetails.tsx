@@ -250,7 +250,7 @@ function ShipmentDetails() {
         // finalFocusRef={focusRefClose}
       >
         <ModalOverlay />
-        <ModalContent minH="300px">
+        <ModalContent minH="300px" mx="2">
           <ModalHeader>
             <Grid
               templateColumns="var(--chakra-sizes-10) 1fr var(--chakra-sizes-12)"
