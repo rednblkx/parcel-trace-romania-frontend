@@ -136,7 +136,7 @@ function AuthProfile() {
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent mx="2">
         <ModalHeader display="flex" alignItems="center">
           <Link to="..">
             <IconButton aria-label="Back" icon={<MdArrowBack />} mr="2" />
