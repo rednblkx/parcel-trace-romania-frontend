@@ -6,12 +6,12 @@ import {
   LinkOverlay,
   Text,
 } from "@chakra-ui/layout";
-import { useColorMode } from "@chakra-ui/react";
+import { useColorMode, FlexProps } from "@chakra-ui/react";
 import { Link, useNavigate } from "react-router-dom";
 import { status_icons } from "./routes/shipment/shipmentDetails";
 import { FaArrowRight } from "react-icons/fa";
 
-function Card({ id, status, statusId, ...rest }: any) {
+function Card({ id, status, statusId, ...rest }: {id: string, status: string, statusId: number} & FlexProps) {
   const navigate = useNavigate();
   const { colorMode, toggleColorMode } = useColorMode();
   return (

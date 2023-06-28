@@ -106,9 +106,9 @@ const router = createBrowserRouter([
         element: <SignIn />,
         loader: async () => {
           try {
-            const { data, error } = await supabase.auth.getUser();
+            const { data, error } = await supabase.auth.getSession();
             console.error(error);
-            if (data.user != null) {
+            if (data.session?.user != null) {
               // console.log(data.user);
               return redirect("/profile");
             }

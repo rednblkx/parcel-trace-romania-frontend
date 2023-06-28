@@ -21,7 +21,7 @@ function SignIn() {
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent mx="2">
         <ModalHeader>Sign in</ModalHeader>
         <ModalCloseButton />
         <ModalBody>

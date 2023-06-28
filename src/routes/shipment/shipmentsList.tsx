@@ -82,8 +82,7 @@ function ShipmentsList() {
         wrap={["nowrap", "wrap"]}
         justify={[shipments?.length == 0 ? "center" : "unset", "space-around"]}
         alignContent="center"
-        // h={shipments?.length == 0 ? "var(--content-size)" : "unset"}
-        // pos="relative"
+        flex={shipments?.length == 0 ? 1 : ""}
         pb="4"
       >
         {shipments?.map((el) => (
@@ -92,6 +91,7 @@ function ShipmentsList() {
             id={el.id}
             status={el.status}
             statusId={el.statusId}
+            onTouchStart={(ev) => {ev.preventDefault() ; console.log(ev)}}
           />
         ))}
         {shipments?.length == 0 && (

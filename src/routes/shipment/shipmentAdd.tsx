@@ -73,7 +73,9 @@ export async function action({ request, params }: any) {
   const carrier: number = formData.get("carrier");
   let error = null;
 
-  await createEntry(id, "", carrier);
+  if (!id || !carrier) {
+    error = "Tracking ID or Carrier not provided"
+  } else await createEntry(id, "", carrier);
   return error ?? redirect(`/shipment/${id}`);
 }
 
@@ -101,7 +103,7 @@ function ShipmentAdd() {
   return (
     <Modal isOpen={true} onClose={() => navigate("..")} isCentered={true}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent mx="2">
         <ModalHeader>
           <Flex align="center">
             <Link to="..">
@@ -115,7 +117,6 @@ function ShipmentAdd() {
           <Form method="post" action="/shipment/add" style={{ width: "100%" }}>
             <Input placeholder="Tracking ID" type="text" name="id" mb="2" />
             <Select placeholder="Select carrier" mb="4" name="carrier">
-              {/* <option value="DPD">DPD</option> */}
               {activeCarriers?.map((row) => (
                 <option value={row.id} key={row.id}>
                   {row.name}
@@ -123,7 +124,7 @@ function ShipmentAdd() {
               ))}
             </Select>
             <Center w="100%" mb="4" flexDirection="column">
-              {actionsData && <Text mb="2">{actionsData}</Text>}
+              {actionsData && <Text color="red" mb="2">{actionsData}</Text>}
               <Button type="submit">
                 Add <Icon as={BsPlus} />
               </Button>
@@ -136,30 +137,6 @@ function ShipmentAdd() {
         </ModalFooter> */}
       </ModalContent>
     </Modal>
-    // <Center w="100vw" h="100vh" pos="absolute" top="0" zIndex="10" bg={colorMode === "light" ? "whiteAlpha.800" : "blackAlpha.800"}  transition="all 0.2s">
-    //   <Flex p={5} shadow="md" borderRadius="5px" w={["350px", "450px"]} maxH="500px" bg={colorMode === "light" ? "whiteAlpha.900" : "gray.900"}>
-    //     <VStack align="start" w="100%">
-    //       <Flex align="center">
-    //         <Link to=".."><IconButton aria-label="Back" icon={<MdArrowBack />} mr="2" /></Link>
-    //         <Heading as="h3" size="md">
-    //           Add Shipment
-    //         </Heading>
-    //       </Flex>
-    //         <Flex direction="column" w="100%">
-    //           <Form method="post" action="/shipments/add" style={{width: "100%"}}>
-    //             <Input placeholder="Tracking ID" type="text" name="id" mb="2" />
-    //             <Select placeholder="Select carrier" mb="2" name="carrier">
-    //             {/* <option value="DPD">DPD</option> */}
-    //             {data.map(row => <option value={row.id}>{row.name}</option>)}
-    //             </Select>
-    //             <Center w="100%" mt="2">
-    //               <Button type="submit">Create</Button>
-    //             </Center>
-    //           </Form>
-    //         </Flex>
-    //     </VStack>
-    //   </Flex>
-    // </Center>
   );
 }
 
