@@ -69,7 +69,7 @@ async function createEntry(id: string, status: string, carrier: number) {
 
 export async function action({ request, params }: any) {
   const formData = await request.formData();
-  const id: string = formData.get("id");
+  const id: string = formData.get("id").trim();
   const carrier: number = formData.get("carrier");
   let error = null;
 

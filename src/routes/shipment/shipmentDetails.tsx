@@ -86,16 +86,16 @@ export const status_icons: { [id: number]: IconType } = {
   [CARGUS_WEIGHTING]: FaBalanceScale,
   [SAMEDAY_LOADED_LOCKER]: TbTruckLoading,
   [SAMEDAY_BUSY_LOCKER]: FaClock,
-  255: FaBox
+  255: FaBox,
 };
 
 interface IShipmentResponse {
   data: {
-    carriers: ICarriers[] | null,
-    shipment: IShipment | null,
+    carriers: ICarriers[] | null;
+    shipment: IShipment | null;
     // watched_parcels: IParcelMonitor[] | null
-  },
-  error?: PostgrestError | null
+  };
+  error?: PostgrestError | null;
 }
 
 export async function getShipment(trackingid: string) {
@@ -104,20 +104,22 @@ export async function getShipment(trackingid: string) {
   let res: IShipmentResponse;
   let shipment = list?.find((el) => el.id === trackingid) ?? null;
   // let { data: watched_parcels, error } = await supabase.from("parcels_monitoring").select("*") as PostgrestResponse<IParcelMonitor>;
-  
+
   if (!carriers) {
-    let { data: list_carriers, error } = await supabase.from("carriers").select("*") as PostgrestResponse<ICarriers>;
-    
+    let { data: list_carriers, error } = (await supabase
+      .from("carriers")
+      .select("*")) as PostgrestResponse<ICarriers>;
+
     await localforage.setItem("carriers", list_carriers);
-    carriers = list_carriers
+    carriers = list_carriers;
     res = {
       data: {
         carriers,
         shipment,
         // watched_parcels
       },
-      error
-    }
+      error,
+    };
   }
   res = {
     data: {
@@ -126,7 +128,7 @@ export async function getShipment(trackingid: string) {
       // watched_parcels,
     },
     // error
-  }
+  };
 
   return res;
 }
@@ -157,7 +159,7 @@ function StepDetail({
   country,
   county,
   statusDate,
-  transit
+  transit,
 }: {
   status: string;
   statusId: number;
@@ -176,9 +178,11 @@ function StepDetail({
         <Text textAlign="start" mt={2}>
           {country ? `${country}, ${county}` : county}
         </Text>
-        {transit && <Text>
-          <b>Transit:</b> {transit}
-        </Text>}
+        {transit && (
+          <Text>
+            <b>Transit:</b> {transit}
+          </Text>
+        )}
         <Text textAlign="start" mt={2}>
           {new Date(statusDate).toLocaleString()}
         </Text>
@@ -189,49 +193,67 @@ function StepDetail({
 
 function ShipmentDetails() {
   let { trackingid } = useParams() as { trackingid: string };
-  let { data: {carriers, shipment}, error } = useLoaderData() as IShipmentResponse;
+  let {
+    data: { carriers, shipment },
+    error,
+  } = useLoaderData() as IShipmentResponse;
+  let data = useActionData() as IShipment & { error?: string };
   let navigate = useNavigate();
   let submit = useSubmit();
   let focusRef = useRef(null);
   let toast = useToast();
   let { user } = useAuth();
-  let [isWatched, setIsWatched] = useState(false)
+  let [isWatched, setIsWatched] = useState(false);
 
   const [isMobile, setMobile] = useState(false);
 
   useEffect(() => {
+    if (data?.error) {
+      toast({
+        title: "Error",
+        description: data?.error,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  }, [data]);
+
+  useEffect(() => {
     const userAgent =
       typeof window.navigator === "undefined" ? "" : navigator.userAgent;
-    
+
     const mobile = Boolean(
       userAgent.match(
         /Android|BlackBerry|iPhone|Macintosh|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i
       )
     );
-    
+
     setMobile(mobile);
   }, []);
 
   useEffect(() => {
     if (user) {
       let parcels = supabase.from("parcels_monitoring").select("*");
-      parcels.then(({error, data}) => {
-        setIsWatched(data?.find(a => a.tracking_id == trackingid) ? true : false)
-      })
-    } else setIsWatched(true)
-  }, [])
+      parcels.then(({ error, data }) => {
+        setIsWatched(
+          data?.find((a) => a.tracking_id == trackingid) ? true : false
+        );
+      });
+    } else setIsWatched(true);
+  }, []);
 
   useEffect(() => {
     if (error) {
       toast({
-        title: 'Something went wrong',
+        title: "Something went wrong",
         description: error.message,
-        status: 'error',
+        status: "error",
         duration: 3000,
         isClosable: true,
-      })
+      });
     }
-  }, [])
+  }, []);
 
   // let focusRefClose = useFocusRefOnModalClose();
 
@@ -271,36 +293,63 @@ function ShipmentDetails() {
                 </Heading>
               </GridItem>
               <GridItem>
-              <Tooltip hasArrow isOpen={(isMobile) || undefined} label={shipment?.statusId == 255 ? 'Not supported for this carrier' : user ? isWatched ? 'Parcel already added' : "" : "Sign in required"} isDisabled={shipment?.statusId == 255 ? false : !isWatched}>
-                <Button disabled={shipment?.statusId == 255 ? true : isWatched} onClick={async () => {
-                  let { error } = await supabase.from("parcels_monitoring").insert({ tracking_id: shipment?.id, carrier_id: shipment?.carrier, user_id: user?.id, statusId: shipment?.statusId, count_events: shipment?.history.length })
-                  
-                  if (error) {
-                    toast({
-                      title: 'Something went wrong',
-                      description: error.message,
-                      status: 'error',
-                      duration: 3000,
-                      isClosable: true,
-                    })
-                  } else {
-                    toast({
-                      title: `Parcel ${shipment?.id} added`,
-                      description: "Shipment added to the watching list",
-                      status: 'success',
-                      duration: 3000,
-                      isClosable: true,
-                    })
-                    setIsWatched(true)
+                <Tooltip
+                  hasArrow
+                  isOpen={isMobile || undefined}
+                  label={
+                    shipment?.statusId == 255
+                      ? "Not supported for this carrier"
+                      : user
+                      ? isWatched
+                        ? "Parcel already added"
+                        : ""
+                      : "Sign in required"
                   }
-                }}><Icon as={FaBell}></Icon></Button></Tooltip>
+                  isDisabled={shipment?.statusId == 255 ? false : !isWatched}
+                >
+                  <Button
+                    disabled={shipment?.statusId == 255 ? true : isWatched}
+                    onClick={async () => {
+                      let { error } = await supabase
+                        .from("parcels_monitoring")
+                        .insert({
+                          tracking_id: shipment?.id,
+                          carrier_id: shipment?.carrier,
+                          user_id: user?.id,
+                          statusId: shipment?.statusId,
+                          count_events: shipment?.history.length,
+                        });
+
+                      if (error) {
+                        toast({
+                          title: "Something went wrong",
+                          description: error.message,
+                          status: "error",
+                          duration: 3000,
+                          isClosable: true,
+                        });
+                      } else {
+                        toast({
+                          title: `Parcel ${shipment?.id} added`,
+                          description: "Shipment added to the watching list",
+                          status: "success",
+                          duration: 3000,
+                          isClosable: true,
+                        });
+                        setIsWatched(true);
+                      }
+                    }}
+                  >
+                    <Icon as={FaBell}></Icon>
+                  </Button>
+                </Tooltip>
               </GridItem>
             </Grid>
           </ModalHeader>
           {/* <ModalCloseButton /> */}
           <ModalBody>
             {shipment ? (
-              <VStack align="start" w="100%" >
+              <VStack align="start" w="100%">
                 <Box w="100%" ref={focusRef}>
                   {shipment.history?.map((el, i) => (
                     <StepDetail
@@ -316,24 +365,28 @@ function ShipmentDetails() {
                   {/* {shipment.history?.length === 0 && (
                     <Progress size="xs" isIndeterminate />
                   )} */}
-                  {shipment.history?.length === 0 && <Stack>
-                    <HStack>
-                      <SkeletonCircle size="10" />
-                      <Skeleton height="20px" width="100%" />
-                    </HStack>
-                    <HStack>
-                      <SkeletonCircle size="10" />
-                      <Skeleton height="20px" width="100%" />
-                    </HStack>
-                    <HStack>
-                      <SkeletonCircle size="10" />
-                      <Skeleton height="20px" width="100%" />
-                    </HStack>
-                  </Stack>}
+                  {shipment.history?.length === 0 && (
+                    <Stack>
+                      <HStack>
+                        <SkeletonCircle size="10" />
+                        <Skeleton height="20px" width="100%" />
+                      </HStack>
+                      <HStack>
+                        <SkeletonCircle size="10" />
+                        <Skeleton height="20px" width="100%" />
+                      </HStack>
+                      <HStack>
+                        <SkeletonCircle size="10" />
+                        <Skeleton height="20px" width="100%" />
+                      </HStack>
+                    </Stack>
+                  )}
                 </Box>
                 <Divider orientation="horizontal" />
                 <Text>
-                  Carrier: {carriers?.find((id) => shipment?.carrier === id.id)?.name || shipment.carrier_name}
+                  Carrier:{" "}
+                  {carriers?.find((id) => shipment?.carrier === id.id)?.name ||
+                    shipment.carrier_name}
                 </Text>
                 <Text>
                   Added At: {new Date(shipment?.createdAt).toLocaleString()}
