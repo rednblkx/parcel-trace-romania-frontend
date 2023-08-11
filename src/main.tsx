@@ -196,10 +196,10 @@ const router = createBrowserRouter([
             const { data: api_res, error } = await supabase.functions.invoke(
               "trace-parcel",
               {
-                body: {
+                body: [{
                   carrier_id: list[parcel].carrier,
                   tracking_id: list[parcel].id,
-                },
+                }],
               }
             );
 
@@ -207,11 +207,13 @@ const router = createBrowserRouter([
               throw error;
             }
 
+            let new_data = api_res[0];
+
             let new_status: IShipment = {
               ...list[parcel],
-              status: api_res.status,
-              statusId: api_res.statusId,
-              history: api_res.eventsHistory,
+              status: new_data.status,
+              statusId: new_data.statusId,
+              history: new_data.eventsHistory,
               updatedAt: new Date(),
             };
 
