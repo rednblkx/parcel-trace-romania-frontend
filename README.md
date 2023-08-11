@@ -13,7 +13,7 @@ A web application for tracking parcels made with React and Chakra UI, using Supa
 
 ## Features
 
-- Monitoring for updates on the backend using pg_cron and sending notifications via ntfy.sh
+- Monitoring for updates on the backend using pg_cron and sending notifications via Push Notifications(on iOS devices, the app needs to be added to home screen)
 - Check for updates on the parcel every 31st minute by calling an edge function on supabase
 - User-friendly interface built with Chakra UI
 
