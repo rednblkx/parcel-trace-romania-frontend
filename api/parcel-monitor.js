@@ -21,24 +21,22 @@ export default async function handler(req, res) {
     const supabase = createClient(process.env.VITE_SUPABASE_URL || "", process.env.VITE_SUPABASE_SERVICE_KEY || "")
 
     const { data: parcels, error } = await supabase.rpc("get_parcels_monitoring");
-
     if (error) {
       throw error
     }
-    let promises = parcels.map(obj => supabase.functions.invoke("trace-parcel", { body: { tracking_id: obj.tracking_id, carrier_id: obj.carrier.id } }));
+    let parcels_data = await supabase.functions.invoke("trace-parcel", { body: parcels.map(a => ({ tracking_id: a.tracking_id, carrier_id: a.carrier.id })) });
     if (parcels && parcels.length > 0) {
-      let result = await Promise.all(promises);
         let notifications = []
-        for (const data of result) {
+        for (const data of parcels_data.data) {
           try {
-            let shipment = parcels.find(a => a.tracking_id.includes(data.data?.awbNumber));
-            if (data.data && shipment.count_events < data?.data?.eventsHistory.length) {
+            let shipment = parcels.find(a => a.tracking_id.includes(data?.awbNumber));
+            if (data && shipment.count_events < data?.eventsHistory.length) {
               // const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
               for (const sub of shipment.subscriptions) {
-                notifications.push({ sub, data: { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: data.data.status, county: data?.data?.eventsHistory[0].county } })
+                notifications.push({ sub, data: { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: data.status, county: data?.eventsHistory[0].county } })
               }
               // axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${shipment.user_id.slice(0, 8)}`, `${shipment.carrier_id.name} \n ${shipment.tracking_id} - ${data?.data.status}, ${data?.data.eventsHistory[0].county}`)
-              if (data.data.statusId == 99 || data.data.statusId == 255) {
+              if (data.statusId == 99 || data.statusId == 255) {
                 const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
                 if (errorL) {
                   console.log(errorL);
@@ -47,7 +45,7 @@ export default async function handler(req, res) {
                   notifications.push({ sub, data: { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" } })
                 }
               } else {
-                const { error: errorL } = await supabase.from("parcels_monitoring").update({ statusId: data?.data?.statusId, last_updated: new Date(), last_checked: new Date(), count_events: data?.data.eventsHistory.length }).eq("tracking_id", shipment.tracking_id)
+                const { error: errorL } = await supabase.from("parcels_monitoring").update({ statusId: data?.statusId, last_updated: new Date(), last_checked: new Date(), count_events: data?.eventsHistory.length }).eq("tracking_id", shipment.tracking_id)
                 if (errorL) {
                   console.log(errorL);
                 }
@@ -62,7 +60,7 @@ export default async function handler(req, res) {
                   console.log(errorL);
                 }
               } else {
-                if (data.data.statusId == 99 || data.data.statusId == 255) {
+                if (data.statusId == 99 || data.statusId == 255) {
                   const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
                   if (errorL) {
                     console.log(errorL);
@@ -82,7 +80,8 @@ export default async function handler(req, res) {
             console.error(error);
           }
         }
-        console.log(notifications.length);
+      console.log(notifications.length);
+      console.log(notifications);
         await Promise.all(notifications.map(b => webpush.sendNotification(b.sub, JSON.stringify(b.data))))
     }
     res.setHeader("Access-Control-Allow-Origin", "*");
