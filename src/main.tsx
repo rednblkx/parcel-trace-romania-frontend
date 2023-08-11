@@ -203,12 +203,14 @@ const router = createBrowserRouter([
               }
             );
 
-            if (api_res === null && error) {
-              throw error;
-            }
-
+            
             let new_data = api_res[0];
-
+            
+            if (new_data.error) {
+              if (new_data.error.response) {
+                throw new_data.error.response.statusText;
+              } else new_data.error
+            }
             let new_status: IShipment = {
               ...list[parcel],
               status: new_data.status,
@@ -223,7 +225,7 @@ const router = createBrowserRouter([
 
             return new_status;
           } catch (error) {
-            console.log(error);
+            return {error}
           }
         },
         loader: ({ params }: any) => getShipment(params.trackingid),
