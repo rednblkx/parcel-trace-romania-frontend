@@ -34,7 +34,7 @@ export default async function handler(req, res) {
               if (data && shipment?.count_events < data?.eventsHistory.length) {
                 // const { data: dataS, error } = await supabase.from("subscriptions").select("*").eq("user_id", shipment.user_id)
                 for (const sub of shipment.subscriptions) {
-                  webpush.sendNotification(sub, { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: data.status, county: data?.eventsHistory[0].county })
+                  await webpush.sendNotification(sub, JSON.stringify({ carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: data.status, county: data?.eventsHistory[0].county }))
                   notifications.push({ sub, data: { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: data.status, county: data?.eventsHistory[0].county } })
                 }
                 // axios.post(`https://ntfy.kodeeater.xyz/parcel-romania-${shipment.user_id.slice(0, 8)}`, `${shipment.carrier_id.name} \n ${shipment.tracking_id} - ${data?.data.status}, ${data?.data.eventsHistory[0].county}`)
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
                     console.log(errorL);
                   }
                   for (const sub of shipment.subscriptions) {
-                    webpush.sendNotification(sub, { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" })
+                    await webpush.sendNotification(sub, JSON.stringify({ carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" }))
                     notifications.push({ sub, data: { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" } })
                   }
                 } else {
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
               } else {
                 if (((new Date() - new Date(shipment?.last_updated).getTime()) / (1000 * 3600 * 24)).toFixed(0) > 10) {
                   for (const sub of shipment?.subscriptions) {
-                    webpush.sendNotification(sub, {carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "No updates in 10 days, removed from the watching list!", county: ""})
+                    await webpush.sendNotification(sub, JSON.stringify({carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "No updates in 10 days, removed from the watching list!", county: ""}))
                     notifications.push({sub, data: {carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "No updates in 10 days, removed from the watching list!", county: ""}})
                   }
                   const { error: errorL } = await supabase.from("parcels_monitoring").delete().eq("tracking_id", shipment.tracking_id)
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
                       console.log(errorL);
                     }
                     for (const sub of shipment.subscriptions) {
-                      webpush.sendNotification(sub, { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" })
+                      await webpush.sendNotification(sub, JSON.stringify({ carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" }))
                       notifications.push({ sub, data: { carrier: shipment.carrier.name, tracking_id: shipment.tracking_id, status: "Parcel delivered, removed from watching list!", county: "" } })
                     }
                   } else {
