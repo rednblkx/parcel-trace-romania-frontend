@@ -41,32 +41,22 @@ function App() {
   useEffect(() => {
     let data = async () => {
       if (navigator.serviceWorker) {
+        let randomUUID = crypto.randomUUID();
+        const deviceId = localStorage.getItem("deviceId");
         const reg = await navigator.serviceWorker.ready;
         if (reg) {
           const sub = await reg.pushManager.getSubscription();
-          if (sub) {
-            const deviceId = localStorage.getItem("deviceId");
-            let randomUUID = crypto.randomUUID();
-            // let { data } = await supabase.from("subscriptions").select("*").eq("deviceId", deviceId).limit(1).single() as PostgrestSingleResponse<{ id: number, created_at: Date, endpoint: string, keys: Record<string, string>, user_id: string, expirationTime: string, last_refresh: Date, deviceId: string }>;
-            let { data } = await supabase.from("subscriptions").select("*") as PostgrestResponse<{ id: number, created_at: Date, endpoint: string, keys: Record<string, string>, user_id: string, expirationTime: string, last_refresh: Date, deviceId: string }>;
-            let endpoint = data?.find(a => a.deviceId == deviceId) || data?.find(a => a.endpoint == sub.endpoint);
+          if (sub || deviceId) {
+            let { data } = await supabase.from("subscriptions").select("*").eq("deviceId", deviceId).limit(1).single() as PostgrestSingleResponse<{ id: number, created_at: Date, endpoint: string, keys: Record<string, string>, user_id: string, expirationTime: string, last_refresh: Date, deviceId: string }>;
             let push = await reg.pushManager.subscribe({
               userVisibleOnly: true,
               applicationServerKey: base64UrlToUint8Array(import.meta.env.VITE_PUBLIC_VAPID_KEY || "")
             })
-            if (endpoint) {
-              const { error } = await supabase.from("subscriptions").update({ ...endpoint, ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", endpoint?.id);
-              console.log(error);
-              if (!deviceId) {
-                localStorage.setItem("deviceId", randomUUID);
-              }
-            } else if (data?.length == 1 && !data[0].deviceId){
-              const { error } = await supabase.from("subscriptions").update({ ...data[0], ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", data[0]?.id);
-              console.log(error);
-              if (!deviceId) {
-                localStorage.setItem("deviceId", randomUUID);
-              }
+            const { error } = await supabase.from("subscriptions").update({ ...data, ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", data?.id);
+            if (!deviceId) {
+              localStorage.setItem("deviceId", randomUUID);
             }
+            console.log(error);
           }
         }
       }

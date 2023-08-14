@@ -85,7 +85,7 @@ function AuthProfile() {
   const permissionRequest = async () => {
     if (navigator.serviceWorker && Notification) {
       if (!notificationEnabled) {
-        const permission = await Notification.requestPermission();
+        const permission = await Notification?.requestPermission();
 
         if (permission == "granted") {
           const reg = await navigator.serviceWorker.ready;
@@ -127,6 +127,7 @@ function AuthProfile() {
           .then(async (successful) => {
             // You've successfully unsubscribed
             console.log("Push notifications unsubscribed");
+            localStorage.removeItem("deviceId");
             toast({
               title: "Success!",
               description: "You have unsubscribed from parcels notifications",
