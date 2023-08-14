@@ -1,6 +1,4 @@
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
-
-cleanupOutdatedCaches()
+import { precacheAndRoute } from 'workbox-precaching'
 
 precacheAndRoute(self.__WB_MANIFEST)
 
@@ -21,13 +19,7 @@ self.addEventListener("push", e => {
 });
 
 self.addEventListener("notificationclick", (event) => {
-  // console.log("On notification click");
-
-  // Data can be attached to the notification so that you
-  // can process it in the notificationclick handler.
-  // console.log(`Notification Data: ${JSON.stringify(event.notification.data)}`);
-    // This looks to see if the current is already open and
-  // focuses if it is
+  
   event.waitUntil(
     clients
       .matchAll({

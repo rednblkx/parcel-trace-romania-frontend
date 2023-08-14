@@ -127,6 +127,13 @@ function AuthProfile() {
           .then(async (successful) => {
             // You've successfully unsubscribed
             console.log("Push notifications unsubscribed");
+            toast({
+              title: "Success!",
+              description: "You have unsubscribed from parcels notifications",
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
             const { error } = await supabase
               .from("subscriptions")
               .delete()

@@ -17,16 +17,15 @@ import ShipmentAdd, {
   ICarriers,
 } from "./routes/shipment/shipmentAdd";
 import theme from "./theme";
-import {
-  PostgrestError,
-  PostgrestResponse,
-} from "@supabase/supabase-js";
+import { PostgrestError, PostgrestResponse } from "@supabase/supabase-js";
 import localforage from "localforage";
 import ShipmentRemove from "./routes/shipment/shipmentRemove";
 import SignIn from "./routes/auth/signIn";
 import AuthProfile from "./routes/auth/authProfile";
 import { AuthProvider, useAuth } from "./Auth";
 import { supabase } from "./supabase";
+
+import { registerSW } from "virtual:pwa-register";
 
 interface IEventsHistory {
   status: string;
@@ -46,7 +45,7 @@ export interface IRes {
 export interface IParcelMonitor {
   id: number;
   tracking_id: string;
-  carrier_id: {id: number, name: string };
+  carrier_id: { id: number; name: string };
   user_id: string;
   created_at: Date;
   last_updated: Date;
@@ -57,6 +56,10 @@ export interface IParcelMonitorResponse {
   data: IParcelMonitor[];
   error?: PostgrestError | Error | null;
 }
+
+registerSW({
+  immediate: true
+});
 
 const router = createBrowserRouter([
   {
@@ -196,20 +199,21 @@ const router = createBrowserRouter([
             const { data: api_res, error } = await supabase.functions.invoke(
               "trace-parcel",
               {
-                body: [{
-                  carrier_id: list[parcel].carrier,
-                  tracking_id: list[parcel].id,
-                }],
+                body: [
+                  {
+                    carrier_id: list[parcel].carrier,
+                    tracking_id: list[parcel].id,
+                  },
+                ],
               }
             );
 
-            
             let new_data = api_res[0];
-            
+
             if (new_data.error) {
               if (new_data.error.response) {
                 throw new_data.error.response.statusText;
-              } else new_data.error
+              } else new_data.error;
             }
             let new_status: IShipment = {
               ...list[parcel],
@@ -225,7 +229,7 @@ const router = createBrowserRouter([
 
             return new_status;
           } catch (error) {
-            return {error}
+            return { error };
           }
         },
         loader: ({ params }: any) => getShipment(params.trackingid),

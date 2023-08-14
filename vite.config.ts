@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [VitePWA({
-    registerType: 'autoUpdate', strategies: 'injectManifest', includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
+    registerType: 'autoUpdate', strategies: 'injectManifest',
     manifest: {
       name: 'Parcel Tracer',
       short_name: 'Parcel Tracer',
@@ -28,6 +28,9 @@ export default defineConfig({
       enabled: true,
       type: 'module'
       /* other options */
+    },
+    workbox: {
+      cleanupOutdatedCaches: true
     }
   }), react()]
 })

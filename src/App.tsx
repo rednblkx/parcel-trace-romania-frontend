@@ -54,14 +54,13 @@ function App() {
               userVisibleOnly: true,
               applicationServerKey: base64UrlToUint8Array(import.meta.env.VITE_PUBLIC_VAPID_KEY || "")
             })
-            console.log(push.toJSON());
             if (endpoint) {
               const { error } = await supabase.from("subscriptions").update({ ...endpoint, ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", endpoint?.id);
               console.log(error);
               if (!deviceId) {
                 localStorage.setItem("deviceId", randomUUID);
               }
-            } else if (data?.length == 1){
+            } else if (data?.length == 1 && !data[0].deviceId){
               const { error } = await supabase.from("subscriptions").update({ ...data[0], ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", data[0]?.id);
               console.log(error);
               if (!deviceId) {
