@@ -2,13 +2,27 @@ import { Outlet, useNavigation, Link } from "react-router-dom";
 import "./App.css";
 import NavBar from "./NavBar";
 import ShipmentsList from "./routes/shipment/shipmentsList";
-import { Button, Flex, Icon, Spinner, useColorModeValue } from "@chakra-ui/react";
+import {
+  Button,
+  Flex,
+  Icon,
+  Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  useColorModeValue,
+} from "@chakra-ui/react";
 import { BsPlus } from "react-icons/bs";
 import localforage from "localforage";
 import CarrierList from "./carriers.json";
 import { useEffect } from "react";
 import { supabase } from "./supabase";
-import { PostgrestResponse, PostgrestSingleResponse } from "@supabase/supabase-js";
+import {
+  PostgrestResponse,
+  PostgrestSingleResponse,
+} from "@supabase/supabase-js";
 
 function base64UrlToUint8Array(base64UrlData: string) {
   const padding = "=".repeat((4 - (base64UrlData.length % 4)) % 4);
@@ -32,11 +46,13 @@ function App() {
     }
   });
   const navigation = useNavigation();
-  const colorMode = useColorModeValue("#ffffff", "#1A202C")
+  const colorMode = useColorModeValue("#ffffff", "#1A202C");
 
   useEffect(() => {
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colorMode)
-  }, [colorMode])
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", colorMode);
+  }, [colorMode]);
 
   useEffect(() => {
     let data = async () => {
@@ -47,12 +63,36 @@ function App() {
         if (reg) {
           const sub = await reg.pushManager.getSubscription();
           if (sub || deviceId) {
-            let { data } = await supabase.from("subscriptions").select("*").eq("deviceId", deviceId).limit(1).single() as PostgrestSingleResponse<{ id: number, created_at: Date, endpoint: string, keys: Record<string, string>, user_id: string, expirationTime: string, last_refresh: Date, deviceId: string }>;
+            let { data } = (await supabase
+              .from("subscriptions")
+              .select("*")
+              .eq("deviceId", deviceId)
+              .limit(1)
+              .single()) as PostgrestSingleResponse<{
+              id: number;
+              created_at: Date;
+              endpoint: string;
+              keys: Record<string, string>;
+              user_id: string;
+              expirationTime: string;
+              last_refresh: Date;
+              deviceId: string;
+            }>;
             let push = await reg.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: base64UrlToUint8Array(import.meta.env.VITE_PUBLIC_VAPID_KEY || "")
-            })
-            const { error } = await supabase.from("subscriptions").update({ ...data, ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", data?.id);
+              applicationServerKey: base64UrlToUint8Array(
+                import.meta.env.VITE_PUBLIC_VAPID_KEY || ""
+              ),
+            });
+            const { error } = await supabase
+              .from("subscriptions")
+              .update({
+                ...data,
+                ...push.toJSON(),
+                deviceId: deviceId || randomUUID,
+                last_refresh: new Date(),
+              })
+              .eq("id", data?.id);
             if (!deviceId) {
               localStorage.setItem("deviceId", randomUUID);
             }
@@ -60,17 +100,41 @@ function App() {
           }
         }
       }
-    }
-    data().catch(console.error)
-  }, [])
+    };
+    data().catch(console.error);
+  }, []);
 
   return (
     <>
-      {navigation.state === "loading" && <Flex bgColor="blackAlpha.600" pos="fixed" align={"center"} justify="center" w="full" h="100dvh" zIndex="9999">
-        <Spinner size={"xl"} color="white"/>
-      </Flex>}
+      {navigation.state === "loading" && (
+        <Flex
+          bgColor="blackAlpha.600"
+          pos="fixed"
+          align={"center"}
+          justify="center"
+          w="full"
+          h="100dvh"
+          zIndex="9999"
+        >
+          <Spinner size={"xl"} color="white" />
+        </Flex>
+      )}
       <NavBar />
-      <ShipmentsList />
+      <Tabs align="center" isFitted flex="1" display="flex" flexDirection="column">
+        <TabList>
+          <Tab>Active</Tab>
+          <Tab>Delivered</Tab>
+        </TabList>
+
+        <TabPanels display="flex" flex="1">
+          <TabPanel display="flex" flex="1" justifyContent="center" flexDirection="column">
+            <ShipmentsList listType="active" />
+          </TabPanel>
+          <TabPanel display="flex" flex="1" justifyContent="center" flexDirection="column">
+            <ShipmentsList listType="delivered" />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
       <Button
         pos="fixed"
         right="16px"

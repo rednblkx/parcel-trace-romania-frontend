@@ -34,7 +34,7 @@ export async function getShipmentList() {
   return list ?? null;
 }
 
-function ShipmentsList() {
+function ShipmentsList({listType}) {
   let list = useLoaderData() as IShipment[];
   let [shipments, setShipments] = useState(list);
   let emptyColorMode = useColorModeValue("#757575", "#888888")
@@ -85,7 +85,7 @@ function ShipmentsList() {
         flex={shipments?.length == 0 ? 1 : ""}
         pb="4"
       >
-        {shipments?.map((el) => (
+        {shipments?.filter(a => listType == "active" ? a.statusId != 99 : a.statusId == 99).map((el) => (
           <Card
             key={el.id}
             id={el.id}
@@ -94,7 +94,7 @@ function ShipmentsList() {
             onTouchStart={(ev) => {ev.preventDefault() ; console.log(ev)}}
           />
         ))}
-        {shipments?.length == 0 && (
+        {shipments?.filter(a => listType == "active" ? a.statusId != 99 : a.statusId == 99).length == 0 && (
           <Flex align="center" justify="center">
             <Heading color={emptyColorMode}>No shipments</Heading>
           </Flex>
