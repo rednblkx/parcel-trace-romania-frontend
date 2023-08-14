@@ -34,7 +34,7 @@ export async function getShipmentList() {
   return list ?? null;
 }
 
-function ShipmentsList({listType}) {
+function ShipmentsList({listType}: {listType: string}) {
   let list = useLoaderData() as IShipment[];
   let [shipments, setShipments] = useState(list);
   let emptyColorMode = useColorModeValue("#757575", "#888888")
@@ -77,7 +77,7 @@ function ShipmentsList({listType}) {
   return (
     <>
       <Stack
-        p="2"
+        // p="2"
         direction={["column", "row"]}
         wrap={["nowrap", "wrap"]}
         justify={[shipments?.length == 0 ? "center" : "unset", "space-around"]}
