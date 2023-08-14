@@ -1,7 +1,7 @@
 import webpush from "web-push"
 
 //storing the keys in variables
-const publicVapidKey = 'BMBXR2-2GL2qPY7u-w6ICu3vmzJPa89M_63e35-DZvycuVQsHs4FPzwLB6AsV0spANBpoVYz1UzJLOrNHe0z_Hg';
+const publicVapidKey = process.env.VITE_PUBLIC_VAPID_KEY;
 const privateVapidKey = process.env.VITE_PRIVATE_VAPID_KEY;
 
 import { createClient } from '@supabase/supabase-js'
@@ -29,6 +29,7 @@ export default async function handler(request, response) {
   console.log(error);
   if (error?.code == '23505') {
     const { error } = await supabase.from("subscriptions").update(subscription).eq("user_id", subscription.user_id);
+    console.log(error);
   }
 
   //create paylod: specified the detals of the push notification

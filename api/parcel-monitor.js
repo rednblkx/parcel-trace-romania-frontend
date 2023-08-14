@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import webpush from "web-push"
 // import axios from "axios"
 
-const publicVapidKey = 'BMBXR2-2GL2qPY7u-w6ICu3vmzJPa89M_63e35-DZvycuVQsHs4FPzwLB6AsV0spANBpoVYz1UzJLOrNHe0z_Hg';
+const publicVapidKey = process.env.VITE_PUBLIC_VAPID_KEY;
 const privateVapidKey = process.env.VITE_PRIVATE_VAPID_KEY;
-webpush.setVapidDetails('mailto:rednblkx@kodeeater.xyz', publicVapidKey, privateVapidKey || "");
+webpush.setVapidDetails('mailto:rednblkx@kodeeater.xyz', publicVapidKey, privateVapidKey);
 
 function timeout(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabase = createClient(process.env.VITE_SUPABASE_URL || "", process.env.VITE_SUPABASE_SERVICE_KEY || "")
+    const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_SERVICE_KEY)
 
     const { data: parcels, error } = await supabase.rpc("get_parcels_monitoring");
     if (error) {

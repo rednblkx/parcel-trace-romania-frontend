@@ -58,9 +58,7 @@ function AuthProfile() {
     navigator.serviceWorker && Notification ? true : false
   );
 
-  const publicApplicationKey = base64UrlToUint8Array(
-    "BMBXR2-2GL2qPY7u-w6ICu3vmzJPa89M_63e35-DZvycuVQsHs4FPzwLB6AsV0spANBpoVYz1UzJLOrNHe0z_Hg"
-  );
+  const publicApplicationKey = base64UrlToUint8Array(import.meta.env.VITE_PUBLIC_VAPID_KEY || "");
 
   useEffect(() => {
     if (loader?.error) {
@@ -98,15 +96,27 @@ function AuthProfile() {
 
           setNotifications(true);
 
+          const deviceId = crypto.randomUUID();
+
           let res = await fetch("api/subscription", {
             method: "POST",
             body: JSON.stringify({
               ...subscription.toJSON(),
               user_id: user?.id,
+              deviceId
             }),
             headers: { "Content-Type": "application/json" },
           });
-          console.log(res);
+          if (res.status === 201) {
+            toast({
+              title: "Success!",
+              description: "Now you are subscribed to parcels notifications",
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+            localStorage.setItem("deviceId", deviceId);
+          }
         }
       } else {
         const reg = await navigator.serviceWorker.ready;

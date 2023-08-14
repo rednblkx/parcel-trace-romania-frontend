@@ -7,6 +7,23 @@ import { BsPlus } from "react-icons/bs";
 import localforage from "localforage";
 import CarrierList from "./carriers.json";
 import { useEffect } from "react";
+import { supabase } from "./supabase";
+import { PostgrestResponse, PostgrestSingleResponse } from "@supabase/supabase-js";
+
+function base64UrlToUint8Array(base64UrlData: string) {
+  const padding = "=".repeat((4 - (base64UrlData.length % 4)) % 4);
+  const base64 = (base64UrlData + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const buffer = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    buffer[i] = rawData.charCodeAt(i);
+  }
+  return buffer;
+}
 
 function App() {
   localforage.getItem("carriers").then(async (element) => {
@@ -20,6 +37,43 @@ function App() {
   useEffect(() => {
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colorMode)
   }, [colorMode])
+
+  useEffect(() => {
+    let data = async () => {
+      if (navigator.serviceWorker) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            const deviceId = localStorage.getItem("deviceId");
+            let randomUUID = crypto.randomUUID();
+            // let { data } = await supabase.from("subscriptions").select("*").eq("deviceId", deviceId).limit(1).single() as PostgrestSingleResponse<{ id: number, created_at: Date, endpoint: string, keys: Record<string, string>, user_id: string, expirationTime: string, last_refresh: Date, deviceId: string }>;
+            let { data } = await supabase.from("subscriptions").select("*") as PostgrestResponse<{ id: number, created_at: Date, endpoint: string, keys: Record<string, string>, user_id: string, expirationTime: string, last_refresh: Date, deviceId: string }>;
+            let endpoint = data?.find(a => a.deviceId == deviceId) || data?.find(a => a.endpoint == sub.endpoint);
+            let push = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: base64UrlToUint8Array(import.meta.env.VITE_PUBLIC_VAPID_KEY || "")
+            })
+            console.log(push.toJSON());
+            if (endpoint) {
+              const { error } = await supabase.from("subscriptions").update({ ...endpoint, ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", endpoint?.id);
+              console.log(error);
+              if (!deviceId) {
+                localStorage.setItem("deviceId", randomUUID);
+              }
+            } else if (data?.length == 1){
+              const { error } = await supabase.from("subscriptions").update({ ...data[0], ...push.toJSON(), deviceId: deviceId || randomUUID, last_refresh: new Date() }).eq("id", data[0]?.id);
+              console.log(error);
+              if (!deviceId) {
+                localStorage.setItem("deviceId", randomUUID);
+              }
+            }
+          }
+        }
+      }
+    }
+    data().catch(console.error)
+  }, [])
 
   return (
     <>
