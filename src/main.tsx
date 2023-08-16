@@ -27,6 +27,8 @@ import { supabase } from "./supabase";
 
 import { registerSW } from "virtual:pwa-register";
 
+import { inject } from '@vercel/analytics';
+
 interface IEventsHistory {
   status: string;
   statusId: number;
@@ -56,6 +58,8 @@ export interface IParcelMonitorResponse {
   data: IParcelMonitor[];
   error?: PostgrestError | Error | null;
 }
+
+inject();
 
 registerSW({
   immediate: true
